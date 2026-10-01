@@ -19,6 +19,8 @@ const esquemaVariables = z.object({
     )
     .pipe(z.array(z.url()).min(1)),
   TRUST_PROXY: z.coerce.number().int().min(0).default(0),
+  // Clave HS256 de los access tokens: al menos 32 caracteres aleatorios (ADR 0016).
+  JWT_SECRET: z.string().min(32, 'Debe tener al menos 32 caracteres'),
 });
 
 const resultado = esquemaVariables.safeParse(process.env);
@@ -37,4 +39,5 @@ export const config = {
   databaseUrl: variables.DATABASE_URL,
   corsOrigins: variables.CORS_ORIGINS,
   trustProxy: variables.TRUST_PROXY,
+  jwtSecret: variables.JWT_SECRET,
 } as const;

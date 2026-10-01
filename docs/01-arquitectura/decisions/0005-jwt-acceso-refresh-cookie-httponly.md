@@ -41,12 +41,16 @@ Además, el historial de cambios (sección 11 del enunciado) incluye el **usuari
 
 ## Por definir en la implementación
 
-- La vida del access token y la del refresh token.
-- El algoritmo de hash de las contraseñas y el algoritmo de firma del JWT.
-- Los nombres de los roles y qué puede hacer cada uno.
-- Dónde guarda el frontend el access token.
-- La protección CSRF: atributos `SameSite` y `path` de la cookie.
-- Los límites del rate limit.
-- Cómo se crean los usuarios iniciales (seed).
+Todo resuelto en el [ADR 0016](0016-autenticacion-sesiones-y-permisos.md):
 
-Última actualización: 2026-09-30
+- Access token de 15 min y sesión de 8 h.
+- Argon2id para las contraseñas y JWT HS256.
+- Roles ASESOR, ANALISTA, TESORERIA y ADMIN, con su matriz de permisos y las reglas de cuatro ojos.
+- El access token vive solo en la memoria del frontend.
+- Cookie `SameSite=Strict` con `Path=/api/auth`, más el header `X-CSRF`.
+- Rate limit de login por IP y por IP + correo, más uno global.
+- Usuarios demo creados con un script.
+
+**Cambio respecto de este ADR:** se agregó la **sesión única** por usuario, y para garantizarla cada petición verifica en la BD que su sesión siga viva. La autenticación deja de ser sin estado en ese punto, a cambio de cortar las sesiones al instante.
+
+Última actualización: 2026-10-01

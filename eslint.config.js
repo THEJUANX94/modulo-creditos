@@ -49,6 +49,22 @@ export default defineConfig(
     },
   },
   {
+    // En los repositories, los campos de relación de Prisma llevan el nombre de su tabla
+    // (Usuarios, Sesiones…), que va en PascalCase: aparecen como claves en select e include.
+    files: ['**/*Repository.ts'],
+    rules: {
+      // Va antes que la regla base: entre selectores igual de específicos, gana el primero.
+      '@typescript-eslint/naming-convention': [
+        'error',
+        {
+          selector: 'objectLiteralProperty',
+          format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+        },
+        ...namingConvention,
+      ],
+    },
+  },
+  {
     // Los componentes React van en PascalCase.
     files: ['**/*.tsx'],
     rules: {

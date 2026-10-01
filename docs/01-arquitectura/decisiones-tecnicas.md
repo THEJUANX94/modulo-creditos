@@ -27,6 +27,8 @@ Las decisiones que dan forma al Módulo de Créditos, en una línea cada una. Ca
 
 | 15 | Contrato HTTP: sobre `{ success, data, meta }` simétrico al error, errores con `details` y `requestId`, códigos 400/409/422 según el tipo, montos como string. Base: config validada con Zod, health de liveness y readiness, seguridad HTTP, compose de infraestructura | El frontend trata todas las respuestas igual, y cada error se rastrea con su requestId | [0015](decisions/0015-contrato-http-y-base-de-la-api.md) |
 
+| 16 | Autenticación: Argon2id, JWT HS256 de 15 min, refresh opaco y rotativo con detección de reuso, **una sola sesión por usuario** verificada en cada petición, rate limit sin bloqueo de cuentas, matriz de permisos con cuatro ojos, y eventos de seguridad inmutables | Una sesión robada o duplicada se corta al instante, y cada acción sobre sesiones y usuarios queda auditada | [0016](decisions/0016-autenticacion-sesiones-y-permisos.md) |
+
 El idioma del código y las convenciones de nombrado están en [convenciones.md](../02-desarrollo/convenciones.md). Los parámetros visuales completos están en [design-system.md](../05-frontend/design-system.md). El diccionario de datos está en [modelo-datos.md](modelo-datos.md).
 
 ## Pendiente de documentar
@@ -35,4 +37,4 @@ Se agrega a este resumen cuando se decida:
 
 - Propuesta de despliegue productivo y respuesta de escalabilidad.
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

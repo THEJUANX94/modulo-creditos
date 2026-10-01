@@ -1,9 +1,14 @@
 import { createApp } from './app';
 import { config } from './config/config';
+import { obtenerHashFicticio } from './modules/auth/contrasenas';
 import { prisma } from './shared/db/prisma';
 import { logger } from './shared/logger';
 
 const tiempoMaximoApagadoMs = 10_000;
+
+// El hash ficticio del login se calcula antes de aceptar peticiones: si se calculara con el primer
+// correo inexistente, esa respuesta tardaría distinto y delataría que el correo no existe.
+await obtenerHashFicticio();
 
 const server = createApp().listen(config.port, () => {
   logger.info({ port: config.port, nodeEnv: config.nodeEnv }, 'API escuchando');

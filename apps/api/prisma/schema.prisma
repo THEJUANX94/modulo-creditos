@@ -111,19 +111,23 @@ model TiposIdentificacion {
 }
 
 model Usuarios {
-  id                 String             @id(clustered: false, map: "PK_Usuarios") @default(dbgenerated("newid()"), map: "DF_Usuarios_id") @db.UniqueIdentifier
-  consecutivo        Int                @unique(map: "UX_Usuarios_consecutivo", clustered: true) @default(autoincrement())
-  correo             String             @unique(map: "UX_Usuarios_correo") @db.NVarChar(254)
-  nombre             String             @db.NVarChar(150)
-  hashContrasena     String             @db.NVarChar(255)
-  rol                String             @db.NVarChar(20)
-  activo             Boolean            @default(true, map: "DF_Usuarios_activo")
-  fechaCreacion      DateTime           @default(dbgenerated("sysutcdatetime()"), map: "DF_Usuarios_fechaCreacion")
-  fechaActualizacion DateTime           @default(dbgenerated("sysutcdatetime()"), map: "DF_Usuarios_fechaActualizacion")
-  CambiosCredito     CambiosCredito[]
-  Creditos           Creditos[]
-  HistorialCredito   HistorialCredito[]
-  Roles              Roles              @relation(fields: [rol], references: [codigo], onUpdate: NoAction, map: "FK_Usuarios_rol")
+  id                                                            String             @id(clustered: false, map: "PK_Usuarios") @default(dbgenerated("newid()"), map: "DF_Usuarios_id") @db.UniqueIdentifier
+  consecutivo                                                   Int                @unique(map: "UX_Usuarios_consecutivo", clustered: true) @default(autoincrement())
+  correo                                                        String             @unique(map: "UX_Usuarios_correo") @db.NVarChar(254)
+  nombre                                                        String             @db.NVarChar(150)
+  hashContrasena                                                String             @db.NVarChar(255)
+  rol                                                           String             @db.NVarChar(20)
+  activo                                                        Boolean            @default(true, map: "DF_Usuarios_activo")
+  debeCambiarContrasena                                         Boolean            @default(false, map: "DF_Usuarios_debeCambiarContrasena")
+  fechaCreacion                                                 DateTime           @default(dbgenerated("sysutcdatetime()"), map: "DF_Usuarios_fechaCreacion")
+  fechaActualizacion                                            DateTime           @default(dbgenerated("sysutcdatetime()"), map: "DF_Usuarios_fechaActualizacion")
+  CambiosCredito                                                CambiosCredito[]
+  Creditos                                                      Creditos[]
+  EventosSeguridad_EventosSeguridad_usuarioAfectadoIdToUsuarios EventosSeguridad[] @relation("EventosSeguridad_usuarioAfectadoIdToUsuarios")
+  EventosSeguridad_EventosSeguridad_usuarioIdToUsuarios         EventosSeguridad[] @relation("EventosSeguridad_usuarioIdToUsuarios")
+  HistorialCredito                                              HistorialCredito[]
+  Sesiones                                                      Sesiones?
+  Roles                                                         Roles              @relation(fields: [rol], references: [codigo], onUpdate: NoAction, map: "FK_Usuarios_rol")
 }
 
 model WebhookEventos {
@@ -156,4 +160,51 @@ model WebhookIntentos {
   WebhookEventos WebhookEventos @relation(fields: [eventoId], references: [id], onUpdate: NoAction, map: "FK_WebhookIntentos_eventoId")
 
   @@unique([eventoId, numeroIntento], map: "UX_WebhookIntentos_evento_numero")
+}
+
+model EventosSeguridad {
+  id                                                    BigInt    @id(map: "PK_EventosSeguridad") @default(autoincrement())
+  tipoEvento                                            String    @db.NVarChar(30)
+  usuarioId                                             String?   @db.UniqueIdentifier
+  usuarioAfectadoId                                     String?   @db.UniqueIdentifier
+  sesionId                                              BigInt?
+  correoIntentado                                       String?   @db.NVarChar(254)
+  ruta                                                  String?   @db.NVarChar(200)
+  detalle                                               String?   @db.NVarChar(200)
+  ip                                                    String    @db.NVarChar(45)
+  userAgent                                             String?   @db.NVarChar(300)
+  requestId                                             String?   @db.NVarChar(100)
+  fecha                                                 DateTime  @default(dbgenerated("sysutcdatetime()"), map: "DF_EventosSeguridad_fecha")
+  Sesiones                                              Sesiones? @relation(fields: [sesionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_EventosSeguridad_sesionId")
+  Usuarios_EventosSeguridad_usuarioAfectadoIdToUsuarios Usuarios? @relation("EventosSeguridad_usuarioAfectadoIdToUsuarios", fields: [usuarioAfectadoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_EventosSeguridad_usuarioAfectadoId")
+  Usuarios_EventosSeguridad_usuarioIdToUsuarios         Usuarios? @relation("EventosSeguridad_usuarioIdToUsuarios", fields: [usuarioId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_EventosSeguridad_usuarioId")
+
+  @@index([tipoEvento, fecha], map: "IX_EventosSeguridad_tipoEvento_fecha")
+  @@index([usuarioId, fecha], map: "IX_EventosSeguridad_usuarioId_fecha")
+}
+
+model RefreshTokens {
+  id            BigInt    @id(map: "PK_RefreshTokens") @default(autoincrement())
+  sesionId      BigInt
+  hashToken     Bytes     @unique(map: "UX_RefreshTokens_hashToken") @db.Binary(32)
+  fechaCreacion DateTime  @default(dbgenerated("sysutcdatetime()"), map: "DF_RefreshTokens_fechaCreacion")
+  fechaUso      DateTime?
+  requestId     String?   @db.NVarChar(100)
+  Sesiones      Sesiones  @relation(fields: [sesionId], references: [id], onUpdate: NoAction, map: "FK_RefreshTokens_sesionId")
+
+  @@index([sesionId], map: "IX_RefreshTokens_sesionId")
+}
+
+model Sesiones {
+  id               BigInt             @id(map: "PK_Sesiones") @default(autoincrement())
+  usuarioId        String             @unique(map: "UX_Sesiones_activa", where: raw("([fechaRevocacion] IS NULL)")) @db.UniqueIdentifier
+  fechaInicio      DateTime           @default(dbgenerated("sysutcdatetime()"), map: "DF_Sesiones_fechaInicio")
+  fechaExpiracion  DateTime
+  fechaRevocacion  DateTime?
+  motivoRevocacion String?            @db.NVarChar(30)
+  ip               String             @db.NVarChar(45)
+  userAgent        String?            @db.NVarChar(300)
+  EventosSeguridad EventosSeguridad[]
+  RefreshTokens    RefreshTokens[]
+  Usuarios         Usuarios           @relation(fields: [usuarioId], references: [id], onUpdate: NoAction, map: "FK_Sesiones_usuarioId")
 }

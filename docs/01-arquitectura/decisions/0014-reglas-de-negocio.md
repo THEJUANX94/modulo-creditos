@@ -110,9 +110,9 @@ Cada regla vive en el **service**, que da el código de error y el mensaje para 
 
 Las transiciones no se duplican en la BD: el mapa vive en un solo lugar (el código) y se prueba de forma unitaria.
 
-### 10. Roles (preliminar)
+### 10. Roles y cuatro ojos
 
-La matriz exacta de permisos se cierra en el paso de autenticación. El punto de partida, con separación de funciones (quien aprueba no desembolsa), es:
+La matriz definitiva, con la lectura y la cancelación, está en el [ADR 0016](0016-autenticacion-sesiones-y-permisos.md). Además de los roles, el service aplica dos reglas de **cuatro ojos**: **quien registra un crédito no lo aprueba, y quien lo aprueba no lo desembolsa**, aunque su rol lo permita (por ejemplo, un ADMIN). El punto de partida fue:
 
 | Rol | Puede |
 |---|---|
@@ -144,7 +144,6 @@ La matriz exacta de permisos se cierra en el paso de autenticación. El punto de
 ## Por definir en la implementación
 
 - El código HTTP y el código de error de una transición inválida y de un error de validación de entrada (400 o 422).
-- La matriz final de permisos por rol.
 - Qué parte de estas reglas se valida además en los esquemas Zod compartidos ([ADR 0007](0007-zod-compartido-openapi-generado.md)).
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

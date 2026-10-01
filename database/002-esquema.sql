@@ -69,6 +69,8 @@ CREATE TABLE dbo.Usuarios (
     hashContrasena     NVARCHAR(255)    NOT NULL,
     rol                NVARCHAR(20)     NOT NULL,
     activo             BIT              NOT NULL CONSTRAINT DF_Usuarios_activo DEFAULT (1),
+    -- La contraseña que asigna un ADMIN es temporal: el usuario debe cambiarla en su primer login.
+    debeCambiarContrasena BIT           NOT NULL CONSTRAINT DF_Usuarios_debeCambiarContrasena DEFAULT (0),
     fechaCreacion      DATETIME2(3)     NOT NULL CONSTRAINT DF_Usuarios_fechaCreacion DEFAULT (SYSUTCDATETIME()),
     fechaActualizacion DATETIME2(3)     NOT NULL CONSTRAINT DF_Usuarios_fechaActualizacion DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT PK_Usuarios PRIMARY KEY NONCLUSTERED (id),
@@ -77,6 +79,53 @@ CREATE TABLE dbo.Usuarios (
     CONSTRAINT FK_Usuarios_rol FOREIGN KEY (rol) REFERENCES dbo.Roles (codigo),
     CONSTRAINT CK_Usuarios_nombre CHECK (LEN(LTRIM(nombre)) > 0)
 );
+
+/* ───────────── Sesiones (ADR 0016) ─────────────
+   Una sola sesión activa por usuario: un login nuevo revoca la anterior, y lo garantiza
+   el índice único filtrado UX_Sesiones_activa aun con dos logins simultáneos.
+   Cada petición autenticada verifica aquí que su sesión siga viva. */
+
+CREATE TABLE dbo.Sesiones (
+    id               BIGINT IDENTITY(1, 1) NOT NULL,
+    usuarioId        UNIQUEIDENTIFIER NOT NULL,
+    fechaInicio      DATETIME2(3)     NOT NULL CONSTRAINT DF_Sesiones_fechaInicio DEFAULT (SYSUTCDATETIME()),
+    fechaExpiracion  DATETIME2(3)     NOT NULL,   -- 8 h desde el inicio; no se extiende con la rotación
+    fechaRevocacion  DATETIME2(3)     NULL,
+    motivoRevocacion NVARCHAR(30)     NULL,
+    ip               NVARCHAR(45)     NOT NULL,   -- 45 caracteres: cabe una IPv6
+    userAgent        NVARCHAR(300)    NULL,
+    CONSTRAINT PK_Sesiones PRIMARY KEY CLUSTERED (id),
+    CONSTRAINT FK_Sesiones_usuarioId FOREIGN KEY (usuarioId) REFERENCES dbo.Usuarios (id),
+    CONSTRAINT CK_Sesiones_expiracion CHECK (fechaExpiracion > fechaInicio),
+    CONSTRAINT CK_Sesiones_revocacion CHECK (
+        (fechaRevocacion IS NULL AND motivoRevocacion IS NULL)
+        OR (fechaRevocacion IS NOT NULL AND motivoRevocacion IS NOT NULL)
+    ),
+    CONSTRAINT CK_Sesiones_motivoRevocacion CHECK (
+        motivoRevocacion IN (N'LOGOUT', N'REUTILIZACION', N'NUEVA_SESION', N'USUARIO_DESACTIVADO',
+                             N'ROL_CAMBIADO', N'CONTRASENA_CAMBIADA')
+    )
+);
+
+CREATE UNIQUE NONCLUSTERED INDEX UX_Sesiones_activa
+    ON dbo.Sesiones (usuarioId)
+    WHERE fechaRevocacion IS NULL;
+
+-- El refresh token es opaco: aquí solo se guarda su hash SHA-256. Rota en cada uso (fechaUso).
+CREATE TABLE dbo.RefreshTokens (
+    id            BIGINT IDENTITY(1, 1) NOT NULL,
+    sesionId      BIGINT           NOT NULL,
+    hashToken     BINARY(32)       NOT NULL,
+    fechaCreacion DATETIME2(3)     NOT NULL CONSTRAINT DF_RefreshTokens_fechaCreacion DEFAULT (SYSUTCDATETIME()),
+    fechaUso      DATETIME2(3)     NULL,
+    requestId     NVARCHAR(100)    NULL,
+    CONSTRAINT PK_RefreshTokens PRIMARY KEY CLUSTERED (id),
+    CONSTRAINT UX_RefreshTokens_hashToken UNIQUE (hashToken),
+    CONSTRAINT FK_RefreshTokens_sesionId FOREIGN KEY (sesionId) REFERENCES dbo.Sesiones (id)
+);
+
+CREATE NONCLUSTERED INDEX IX_RefreshTokens_sesionId
+    ON dbo.RefreshTokens (sesionId);
 
 CREATE TABLE dbo.Asociados (
     id                 UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Asociados_id DEFAULT (NEWID()),
@@ -229,6 +278,38 @@ CREATE TABLE dbo.CambiosCredito (
 CREATE NONCLUSTERED INDEX IX_CambiosCredito_creditoId_fecha
     ON dbo.CambiosCredito (creditoId, fecha);
 
+-- Eventos de seguridad (ADR 0016): sesiones, accesos denegados y gestión de usuarios.
+-- usuarioId es quién hizo la acción; usuarioAfectadoId, a quién se le hizo.
+CREATE TABLE dbo.EventosSeguridad (
+    id                BIGINT IDENTITY(1, 1) NOT NULL,
+    tipoEvento        NVARCHAR(30)     NOT NULL,
+    usuarioId         UNIQUEIDENTIFIER NULL,
+    usuarioAfectadoId UNIQUEIDENTIFIER NULL,
+    sesionId          BIGINT           NULL,
+    correoIntentado   NVARCHAR(254)    NULL,   -- login fallido: señal de enumeración de cuentas
+    ruta              NVARCHAR(200)    NULL,   -- acceso denegado
+    detalle           NVARCHAR(200)    NULL,   -- qué cambió, p. ej. "ANALISTA → ADMIN"
+    ip                NVARCHAR(45)     NOT NULL,
+    userAgent         NVARCHAR(300)    NULL,
+    requestId         NVARCHAR(100)    NULL,
+    fecha             DATETIME2(3)     NOT NULL CONSTRAINT DF_EventosSeguridad_fecha DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT PK_EventosSeguridad PRIMARY KEY CLUSTERED (id),
+    CONSTRAINT FK_EventosSeguridad_usuarioId FOREIGN KEY (usuarioId) REFERENCES dbo.Usuarios (id),
+    CONSTRAINT FK_EventosSeguridad_usuarioAfectadoId FOREIGN KEY (usuarioAfectadoId) REFERENCES dbo.Usuarios (id),
+    CONSTRAINT FK_EventosSeguridad_sesionId FOREIGN KEY (sesionId) REFERENCES dbo.Sesiones (id),
+    CONSTRAINT CK_EventosSeguridad_tipoEvento CHECK (
+        tipoEvento IN (N'LOGIN_EXITOSO', N'LOGIN_FALLIDO', N'LOGOUT', N'REFRESH', N'REFRESH_REUTILIZADO',
+                       N'SESION_REEMPLAZADA', N'ACCESO_DENEGADO', N'USUARIO_CREADO', N'USUARIO_DESACTIVADO',
+                       N'USUARIO_ACTIVADO', N'USUARIO_ROL_CAMBIADO', N'CONTRASENA_CAMBIADA')
+    )
+);
+
+CREATE NONCLUSTERED INDEX IX_EventosSeguridad_usuarioId_fecha
+    ON dbo.EventosSeguridad (usuarioId, fecha);
+
+CREATE NONCLUSTERED INDEX IX_EventosSeguridad_tipoEvento_fecha
+    ON dbo.EventosSeguridad (tipoEvento, fecha);
+
 /* ───────────── Webhook: outbox y traza ───────────── */
 
 CREATE TABLE dbo.WebhookEventos (
@@ -306,6 +387,16 @@ BEGIN
 END;
 GO
 
+CREATE TRIGGER dbo.TR_EventosSeguridad_inmutable
+    ON dbo.EventosSeguridad
+    INSTEAD OF UPDATE, DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    THROW 50004, N'EventosSeguridad es inmutable: no admite UPDATE ni DELETE.', 1;
+END;
+GO
+
 /* ───────────── Permisos del login de la app ─────────────
    Mínimo privilegio: lee, inserta y actualiza, pero no borra en ninguna tabla (todo borrado es
    lógico) ni actualiza las tablas de auditoría. */
@@ -314,6 +405,7 @@ GRANT SELECT, INSERT, UPDATE ON SCHEMA::dbo TO appCreditos;
 DENY UPDATE ON dbo.HistorialCredito TO appCreditos;
 DENY UPDATE ON dbo.CambiosCredito TO appCreditos;
 DENY UPDATE ON dbo.WebhookIntentos TO appCreditos;
+DENY UPDATE ON dbo.EventosSeguridad TO appCreditos;
 
 -- Datos del crédito que nunca cambian después de crearlo: ni un error de la API puede modificarlos.
 -- numeroCredito no necesita DENY, porque es una columna calculada.

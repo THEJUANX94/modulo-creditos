@@ -6,10 +6,13 @@ import { contextoPeticion } from './contextoPeticion';
 export const logger = pino({
   level: config.logLevel,
   timestamp: pino.stdTimeFunctions.isoTime,
-  // El requestId de la petición en curso llega a cada línea sin pasarlo a mano.
+  // El requestId y el usuario de la petición en curso llegan a cada línea sin pasarlos a mano.
   mixin() {
     const contexto = contextoPeticion.getStore();
-    return contexto ? { requestId: contexto.requestId } : {};
+    if (!contexto) return {};
+    return contexto.usuarioId
+      ? { requestId: contexto.requestId, usuarioId: contexto.usuarioId }
+      : { requestId: contexto.requestId };
   },
   redact: {
     paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],

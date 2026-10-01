@@ -5,6 +5,40 @@ tags: [modulo-creditos, changelog]
 
 # Bitácora de cambios — Módulo de Créditos
 
+## [0.1.0] - 2026-10-01 — Paso 4b: autenticación
+
+Login, sesión única, refresh rotativo, permisos, gestión de usuarios y eventos de seguridad. Decisiones en el [ADR 0016](01-arquitectura/decisions/0016-autenticacion-sesiones-y-permisos.md).
+
+### Added
+- `002-esquema.sql`: `Usuarios.debeCambiarContrasena` y las tablas `Sesiones` (con el índice único filtrado `UX_Sesiones_activa`, una sesión activa por usuario), `RefreshTokens` (solo el hash) y `EventosSeguridad` (inmutable: trigger + `DENY UPDATE`).
+- `@creditos/shared`:
+  - roles, estados del crédito y matriz de permisos con las transiciones por rol;
+  - esquemas Zod de login, contraseña y usuarios, y la paginación común (20 por defecto, máximo 100);
+  - mensajes de Zod en español y los códigos de error de autenticación.
+- `apps/api`, módulo `auth`:
+  - login, refresh con rotación, gracia de 10 s y detección de reuso, logout, cambio de contraseña y `/me`;
+  - middlewares `autenticar()` (verifica la sesión en cada petición) y `autorizar(accion)`;
+  - JWT HS256 con jose y contraseñas con Argon2id.
+- `apps/api`, módulo `usuarios` (solo ADMIN): listar, crear con contraseña temporal, activar o desactivar y cambiar el rol.
+- `apps/api`, código compartido: rate limit (login por IP + correo y por IP, global por IP), header anti-CSRF, `validarEntrada` (Zod → `details`) y el registro de eventos de seguridad.
+- Script `usuarios:crear`, que crea los usuarios demo `@creditos.test`. Variables `JWT_SECRET` y `USUARIOS_DEMO_CLAVE`.
+- `troubleshooting.md`: el 429 del rate limit en desarrollo y el 401 por sesión reemplazada.
+
+### Changed
+- ADR 0005: sus pendientes pasan a resueltos en el ADR 0016, que además cambia la verificación "solo al refrescar" por "en cada petición", por la sesión única.
+- ADR 0010: los cambios y su auditoría van en la misma transacción.
+- ADR 0013, 0014 y 0015, `modelo-datos.md` y `modelo-datos.dbml`: tablas nuevas, matriz final con cuatro ojos y códigos de error nuevos.
+- `server.ts` calcula el hash ficticio del login antes de aceptar peticiones.
+- `eslint.config.js`: PascalCase en las claves de objeto solo en los `*Repository.ts` (campos de relación de Prisma).
+
+### Verificado
+- 47 pruebas de punta a punta contra el bundle de producción. Detalle en el ADR 0016.
+- Tiempo del login con la API caliente: 41 ms con un correo existente frente a 37 ms con uno inexistente.
+- `EventosSeguridad` con los tipos esperados y no modificable por la app; nunca hay más de una sesión activa por usuario; los logs llevan `usuarioId` y ningún secreto.
+
+### Pendiente
+- Regenerar `diagrams/modelo-datos.png` desde `modelo-datos.dbml`, que ya incluye las tres tablas nuevas.
+
 ## [0.1.0] - 2026-09-30 — Paso 4a: base de la API
 
 La API arranca, se conecta a la BD y responde con el contrato definido, pero todavía sin módulos de negocio. Decisiones en el [ADR 0015](01-arquitectura/decisions/0015-contrato-http-y-base-de-la-api.md).

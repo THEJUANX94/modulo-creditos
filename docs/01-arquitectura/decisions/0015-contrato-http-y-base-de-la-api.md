@@ -32,12 +32,13 @@ El enunciado pide códigos HTTP apropiados y respuestas consistentes, y fija el 
    | Status | Significado | Códigos |
    |---|---|---|
    | 400 | Entrada mal formada o fuera de rango: corregir el formulario | `VALIDACION_FALLIDA` |
-   | 401 | Sin sesión | `NO_AUTENTICADO` |
-   | 403 | Rol no autorizado | `SIN_PERMISO` |
-   | 404 | No existe | `CREDITO_NOT_FOUND`, `RUTA_NO_ENCONTRADA` |
-   | 409 | Choca con el estado actual del recurso: recargar o cambiar de acción | `CREDITO_DUPLICADO`, `CREDITO_NO_EDITABLE`, `CREDITO_NO_ELIMINABLE`, `TRANSICION_INVALIDA`, `CREDITO_MODIFICADO` |
+   | 401 | Sin sesión (`NO_AUTENTICADO`: falta el token o venció, el frontend refresca), credenciales inválidas o sesión cerrada (el frontend vuelve al login) | `NO_AUTENTICADO`, `CREDENCIALES_INVALIDAS`, `SESION_INVALIDA` |
+   | 403 | Rol no autorizado, contraseña temporal pendiente o falta el header anti-CSRF | `SIN_PERMISO`, `CAMBIO_CONTRASENA_REQUERIDO`, `CSRF_INVALIDO` |
+   | 404 | No existe | `CREDITO_NOT_FOUND`, `USUARIO_NOT_FOUND`, `RUTA_NO_ENCONTRADA` |
+   | 409 | Choca con el estado actual del recurso: recargar o cambiar de acción | `CORREO_DUPLICADO`, `CREDITO_DUPLICADO`, `CREDITO_NO_EDITABLE`, `CREDITO_NO_ELIMINABLE`, `TRANSICION_INVALIDA`, `CREDITO_MODIFICADO` |
    | 413 | Cuerpo de más de 100 KB | `CUERPO_DEMASIADO_GRANDE` |
    | 422 | Datos bien formados pero inconsistentes: revisar con el usuario | `ASOCIADO_NOMBRE_NO_COINCIDE` |
+   | 429 | Rate limit, con `Retry-After` | `DEMASIADAS_SOLICITUDES` |
    | 500 | Inesperado | `ERROR_INTERNO` |
    | 503 | La BD no responde (readiness) | `BD_NO_DISPONIBLE` |
 
@@ -117,7 +118,8 @@ Con `pnpm -F @creditos/api build` y `node dist/server.js` contra el compose:
 
 ## Por definir en la implementación
 
-- La traducción de los errores de Zod a `details` (paso 4c).
+Resuelto en el paso 4b: los errores de Zod se traducen a `details` con `validarEntrada(esquema, datos)`, un campo por problema (`campo` es la ruta del campo). Los códigos de autenticación están en el [ADR 0016](0016-autenticacion-sesiones-y-permisos.md).
+
 - Si la entrada acepta montos como número además de string (paso 4c).
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

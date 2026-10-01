@@ -51,10 +51,20 @@ Msg 1934 … CREATE TABLE failed because the following SET options have incorrec
 
 **Solución.** Desactivar la conversión en ese comando con `MSYS_NO_PATHCONV=1 docker exec …`, o ejecutarlo desde PowerShell.
 
+## El login responde 429 en desarrollo
+
+**Causa.** El rate limit (5 fallos por IP + correo y 20 logins por IP, en ventanas de 15 minutos) vive en la memoria del proceso. Probar muchos logins seguidos lo agota.
+
+**Solución.** Esperar a que pase la ventana (el header `Retry-After` dice cuántos segundos faltan) o **reiniciar la API**, que reinicia los contadores. En producción, con varias réplicas, el almacén iría a Redis.
+
+## Después de un login, la otra pestaña o el otro equipo responde 401 `SESION_INVALIDA`
+
+**No es un error.** Hay una sola sesión por usuario ([ADR 0016](../01-arquitectura/decisions/0016-autenticacion-sesiones-y-permisos.md)): un login nuevo cierra la sesión anterior al instante. Lo mismo pasa si un ADMIN desactiva al usuario o le cambia el rol, o si un refresh token rotado se reusa pasados 10 segundos. Cada caso queda en `EventosSeguridad`.
+
 ## Prisma inserta `N'PENDIENTE'` literal, o no genera `create` para `Creditos`
 
 **Causa.** Son limitaciones de la introspección de Prisma 7 con SQL Server: no soporta `ROWVERSION`, trata las columnas calculadas como campos normales y lee los `DEFAULT (N'...')` como texto literal.
 
 **Solución.** No se cambia el esquema. Las escrituras de `Creditos` van con SQL parametrizado, y la app no depende de esos defaults en Prisma. Ver el [ADR 0003](../01-arquitectura/decisions/0003-sql-primero-prisma-por-introspeccion.md).
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

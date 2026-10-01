@@ -45,7 +45,13 @@ En Windows no basta con el cambio automático de versión de pnpm. Ver [troubles
    pnpm install
    ```
 
-4. **API**, con recarga al guardar y logs legibles:
+4. **Usuarios demo**, uno por rol (`asesor@`, `analista@`, `tesoreria@` y `admin@creditos.test`), con la contraseña de `USUARIOS_DEMO_CLAVE`. Es idempotente:
+
+   ```bash
+   pnpm -F @creditos/api usuarios:crear
+   ```
+
+5. **API**, con recarga al guardar y logs legibles:
 
    ```bash
    pnpm -F @creditos/api dev
@@ -115,9 +121,9 @@ Se ejecutan con `pnpm -F <paquete> <script>`, por ejemplo `pnpm -F @creditos/api
 
 | Paquete | Scripts |
 |---|---|
-| `@creditos/api` | `dev` (API con recarga), `dev:worker` (worker con recarga), `build` (bundle con tsup en `dist/`), `start`, `start:worker`, `typecheck`, `prisma:pull`, `prisma:generate` |
+| `@creditos/api` | `dev` (API con recarga), `dev:worker` (worker con recarga), `build` (bundle con tsup en `dist/`), `start`, `start:worker`, `typecheck`, `prisma:pull`, `prisma:generate`, `usuarios:crear` |
 | `@creditos/web` | `typecheck` |
 | `@creditos/webhook-mock` | `typecheck` |
 | `@creditos/shared` | `typecheck` |
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

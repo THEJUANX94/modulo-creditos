@@ -4,7 +4,7 @@ Project ModuloCreditos {
   Módulo de Créditos — SQL Server 2022, collation Modern_Spanish_CI_AI, esquema dbo.
   Fechas en DATETIME2(3) UTC. Texto en NVARCHAR.
   Usuarios, Asociados y Creditos: id UUID público (PK NONCLUSTERED) + consecutivo INT IDENTITY (UNIQUE CLUSTERED).
-  Tablas inmutables (DENY UPDATE al login de la app + triggers INSTEAD OF UPDATE, DELETE): HistorialCredito, CambiosCredito, WebhookIntentos.
+  Tablas inmutables (DENY UPDATE al login de la app + triggers INSTEAD OF UPDATE, DELETE): HistorialCredito, CambiosCredito, WebhookIntentos, EventosSeguridad.
   El login de la app no tiene DELETE en ninguna tabla: todo borrado es lógico. Todas las FK con NO ACTION.
   '''
 }
@@ -44,8 +44,61 @@ Table Usuarios {
   hashContrasena nvarchar(255) [not null, note: 'Algoritmo: paso 4']
   rol nvarchar(20) [not null, ref: > Roles.codigo]
   activo bit [not null, default: 1]
+  debeCambiarContrasena bit [not null, default: 0, note: 'Contraseña temporal asignada por un ADMIN']
   fechaCreacion datetime2(3) [not null, default: `SYSUTCDATETIME()`]
   fechaActualizacion datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+}
+
+// ───────────── Sesiones (ADR 0016) ─────────────
+
+Table Sesiones {
+  id bigint [pk, increment, note: 'Va en el access token (sid)']
+  usuarioId uniqueidentifier [not null, ref: > Usuarios.id]
+  fechaInicio datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+  fechaExpiracion datetime2(3) [not null, note: '8 h desde el inicio; la rotación no la extiende']
+  fechaRevocacion datetime2(3) [null]
+  motivoRevocacion nvarchar(30) [null, note: 'CHECK: LOGOUT, REUTILIZACION, NUEVA_SESION, USUARIO_DESACTIVADO, ROL_CAMBIADO, CONTRASENA_CAMBIADA']
+  ip nvarchar(45) [not null]
+  userAgent nvarchar(300) [null]
+
+  indexes {
+    usuarioId [unique, name: 'UX_Sesiones_activa', note: 'Filtrado: WHERE fechaRevocacion IS NULL → una sola sesión activa por usuario']
+  }
+}
+
+Table RefreshTokens {
+  id bigint [pk, increment]
+  sesionId bigint [not null, ref: > Sesiones.id]
+  hashToken binary(32) [unique, not null, note: 'Solo el hash SHA-256 del token opaco']
+  fechaCreacion datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+  fechaUso datetime2(3) [null, note: 'Rotado. Reaparecer pasada la gracia de 10 s = robo']
+  requestId nvarchar(100) [null]
+
+  indexes {
+    sesionId [name: 'IX_RefreshTokens_sesionId']
+  }
+}
+
+Table EventosSeguridad {
+  id bigint [pk, increment]
+  tipoEvento nvarchar(30) [not null, note: 'CHECK: LOGIN_EXITOSO, LOGIN_FALLIDO, LOGOUT, REFRESH, REFRESH_REUTILIZADO, SESION_REEMPLAZADA, ACCESO_DENEGADO, USUARIO_CREADO, USUARIO_DESACTIVADO, USUARIO_ACTIVADO, USUARIO_ROL_CAMBIADO, CONTRASENA_CAMBIADA']
+  usuarioId uniqueidentifier [null, ref: > Usuarios.id, note: 'Quién hizo la acción']
+  usuarioAfectadoId uniqueidentifier [null, ref: > Usuarios.id, note: 'A quién se le hizo']
+  sesionId bigint [null, ref: > Sesiones.id]
+  correoIntentado nvarchar(254) [null]
+  ruta nvarchar(200) [null]
+  detalle nvarchar(200) [null]
+  ip nvarchar(45) [not null]
+  userAgent nvarchar(300) [null]
+  requestId nvarchar(100) [null]
+  fecha datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+
+  Note: 'INMUTABLE · sesiones, accesos denegados y gestión de usuarios'
+
+  indexes {
+    (usuarioId, fecha) [name: 'IX_EventosSeguridad_usuarioId_fecha']
+    (tipoEvento, fecha) [name: 'IX_EventosSeguridad_tipoEvento_fecha']
+  }
 }
 
 Table Asociados {

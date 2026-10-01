@@ -63,7 +63,37 @@ Columnas: `codigo NVARCHAR(10|20|30)` PK, `nombre NVARCHAR(100)` obligatorio y `
 | `hashContrasena` | `NVARCHAR(255)` | No | — | Nunca se guarda la contraseña. El algoritmo se define en el paso de autenticación |
 | `rol` | `NVARCHAR(20)` | No | FK → `Roles` | Autorización por rol |
 | `activo` | `BIT` | No | `DEFAULT 1` | Desactivar sin borrar: el historial lo sigue referenciando |
+| `debeCambiarContrasena` | `BIT` | No | `DEFAULT 0` | La contraseña que asigna un ADMIN es temporal: hasta cambiarla, el usuario solo puede cambiarla ([ADR 0016](decisions/0016-autenticacion-sesiones-y-permisos.md)) |
 | `fechaCreacion`, `fechaActualizacion` | `DATETIME2(3)` | No | `DEFAULT SYSUTCDATETIME()` | Trazabilidad |
+
+## Sesiones
+
+Una fila por login ([ADR 0016](decisions/0016-autenticacion-sesiones-y-permisos.md)). Cada petición autenticada verifica aquí que su sesión siga viva.
+
+| Columna | Tipo | Nulo | Restricción / default | Justificación |
+|---|---|---|---|---|
+| `id` | `BIGINT IDENTITY` | No | PK clustered | Va en el access token (`sid`). No necesita ser secreto: el token está firmado |
+| `usuarioId` | `UNIQUEIDENTIFIER` | No | FK → `Usuarios` | — |
+| `fechaInicio` | `DATETIME2(3)` | No | `DEFAULT SYSUTCDATETIME()` | — |
+| `fechaExpiracion` | `DATETIME2(3)` | No | `CK_Sesiones_expiracion` (> inicio) | 8 h desde el login. La rotación del refresh no la extiende |
+| `fechaRevocacion`, `motivoRevocacion` | `DATETIME2(3)`, `NVARCHAR(30)` | Sí | `CK_Sesiones_revocacion` (van juntos), `CK_Sesiones_motivoRevocacion` | LOGOUT, REUTILIZACION, NUEVA_SESION, USUARIO_DESACTIVADO, ROL_CAMBIADO, CONTRASENA_CAMBIADA |
+| `ip` | `NVARCHAR(45)` | No | — | 45 caracteres: cabe una IPv6 |
+| `userAgent` | `NVARCHAR(300)` | Sí | — | — |
+
+| Índice | Columnas | Por qué |
+|---|---|---|
+| `UX_Sesiones_activa` | (`usuarioId`) único, **filtrado** `WHERE fechaRevocacion IS NULL` | **Una sola sesión activa por usuario**, garantizada por la BD aun con dos logins simultáneos |
+
+## RefreshTokens
+
+| Columna | Tipo | Nulo | Restricción / default | Justificación |
+|---|---|---|---|---|
+| `id` | `BIGINT IDENTITY` | No | PK clustered | — |
+| `sesionId` | `BIGINT` | No | FK → `Sesiones`, `IX_RefreshTokens_sesionId` | — |
+| `hashToken` | `BINARY(32)` | No | `UX_RefreshTokens_hashToken` | **Solo el hash SHA-256**: con una copia de la BD no se pueden usar los tokens |
+| `fechaCreacion` | `DATETIME2(3)` | No | `DEFAULT SYSUTCDATETIME()` | — |
+| `fechaUso` | `DATETIME2(3)` | Sí | — | Cuándo se rotó. Un token usado que reaparece pasada la gracia de 10 s es señal de robo |
+| `requestId` | `NVARCHAR(100)` | Sí | — | — |
 
 ## Asociados
 
@@ -142,6 +172,24 @@ Cambios de datos: una fila por campo modificado. El borrado lógico también se 
 
 Índice `IX_CambiosCredito_creditoId_fecha` (`creditoId`, `fecha`).
 
+## EventosSeguridad — inmutable
+
+Sesiones, accesos denegados y gestión de usuarios ([ADR 0016](decisions/0016-autenticacion-sesiones-y-permisos.md)).
+
+| Columna | Tipo | Nulo | Restricción | Justificación |
+|---|---|---|---|---|
+| `id` | `BIGINT IDENTITY` | No | PK clustered | — |
+| `tipoEvento` | `NVARCHAR(30)` | No | `CK_EventosSeguridad_tipoEvento` | LOGIN_EXITOSO, LOGIN_FALLIDO, LOGOUT, REFRESH, REFRESH_REUTILIZADO, SESION_REEMPLAZADA, ACCESO_DENEGADO, USUARIO_CREADO, USUARIO_DESACTIVADO, USUARIO_ACTIVADO, USUARIO_ROL_CAMBIADO, CONTRASENA_CAMBIADA |
+| `usuarioId` | `UNIQUEIDENTIFIER` | Sí | FK → `Usuarios` | Quién hizo la acción. NULL en un login fallido de un correo inexistente |
+| `usuarioAfectadoId` | `UNIQUEIDENTIFIER` | Sí | FK → `Usuarios` | A quién se le hizo (gestión de usuarios) |
+| `sesionId` | `BIGINT` | Sí | FK → `Sesiones` | — |
+| `correoIntentado` | `NVARCHAR(254)` | Sí | — | Login fallido: la señal de un ataque de enumeración de cuentas |
+| `ruta` | `NVARCHAR(200)` | Sí | — | Acceso denegado |
+| `detalle` | `NVARCHAR(200)` | Sí | — | Qué cambió, p. ej. `ADMIN → ANALISTA` |
+| `ip`, `userAgent`, `requestId`, `fecha` | — | — | — | Origen y momento |
+
+Índices `IX_EventosSeguridad_usuarioId_fecha` y `IX_EventosSeguridad_tipoEvento_fecha`: la actividad de un usuario, o un tipo de evento, en orden.
+
 ## WebhookEventos — outbox
 
 Se inserta en la misma transacción que el crédito ([ADR 0006](decisions/0006-webhook-outbox-transaccional.md)).
@@ -182,14 +230,14 @@ Traza de cada envío al sistema externo.
 | Mecanismo | Qué hace |
 |---|---|
 | Login `appCreditos` | La API se conecta con él. Tiene `SELECT`, `INSERT` y `UPDATE` sobre `dbo` y **ningún `DELETE`**: todo borrado es lógico |
-| `DENY UPDATE` | Sobre `HistorialCredito`, `CambiosCredito` y `WebhookIntentos` |
+| `DENY UPDATE` | Sobre `HistorialCredito`, `CambiosCredito`, `WebhookIntentos` y `EventosSeguridad` |
 | `DENY UPDATE` por columna | `Creditos (asociadoId, fechaSolicitud)` |
-| Triggers `TR_*_inmutable` | `INSTEAD OF UPDATE, DELETE` en las tres tablas de auditoría: rechazan incluso a un administrador |
+| Triggers `TR_*_inmutable` | `INSTEAD OF UPDATE, DELETE` en las cuatro tablas de auditoría: rechazan incluso a un administrador |
 | Scripts | Corren con un login administrador aparte. La contraseña de `appCreditos` llega como variable de sqlcmd y no está en el repositorio |
 
 ## Acceso desde la API (Prisma)
 
-Prisma 7 no soporta parte de este esquema (`ROWVERSION`, columnas calculadas, `DEFAULT` con `N'...'`). **El esquema no se recorta para acomodar al ORM**: esas operaciones, en particular todas las escrituras de `Creditos`, van con SQL parametrizado. Detalle y pruebas en el [ADR 0003](decisions/0003-sql-primero-prisma-por-introspeccion.md).
+Prisma introspecta `UX_Sesiones_activa` y `UX_Creditos_enCurso` como si fueran únicos en toda la tabla: el código no usa `findUnique` por esas columnas ni la relación `Usuarios → Sesiones`. Además, Prisma 7 no soporta parte de este esquema (`ROWVERSION`, columnas calculadas, `DEFAULT` con `N'...'`). **El esquema no se recorta para acomodar al ORM**: esas operaciones, en particular todas las escrituras de `Creditos`, van con SQL parametrizado. Detalle y pruebas en el [ADR 0003](decisions/0003-sql-primero-prisma-por-introspeccion.md).
 
 ## Verificación
 
@@ -205,4 +253,4 @@ El 2026-09-30 se ejecutaron los tres scripts sobre SQL Server 2022 CU27 y se pro
 
 Los triggers se probaron además como `sa`.
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

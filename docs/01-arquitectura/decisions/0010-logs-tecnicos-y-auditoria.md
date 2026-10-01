@@ -78,13 +78,13 @@ Se registra en tablas de la BD que solo admiten inserciones:
 ## Por definir en la implementación
 
 - Si el requestId también viaja al receptor del webhook (en un header).
-- Si la auditoría se escribe en la misma transacción que el cambio que registra.
 - La retención de los logs técnicos y de la auditoría.
-- La tabla de eventos de seguridad (paso de autenticación).
 - Qué partes de la auditoría expone la API y muestra el frontend (por ejemplo, el historial en el detalle del crédito).
+
+Resuelto en el [ADR 0016](0016-autenticacion-sesiones-y-permisos.md): la tabla `EventosSeguridad` (inmutable), y **la auditoría va en la misma transacción que el cambio que registra**. Los intentos fallidos y los accesos denegados se registran aparte, sin hacer fallar la respuesta si el registro falla. Los logs de petición llevan también el `usuarioId`.
 
 Resuelto en el [ADR 0015](0015-contrato-http-y-base-de-la-api.md): el formato del requestId (el entrante se acepta solo si es seguro; si no, UUID), su ubicación en el cuerpo de error (`requestId` al nivel de `error`), y qué se registra (metadatos por petición, stack solo en los 500, nivel desde `LOG_LEVEL`).
 
 Resuelto en el [ADR 0013](0013-modelo-de-datos.md): la auditoría de cambios queda en dos tablas, `HistorialCredito` (estados) y `CambiosCredito` (datos, agrupados por `operacionId`). Su inmutabilidad tiene dos capas: permisos del login de la app y triggers que bloquean incluso al administrador.
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

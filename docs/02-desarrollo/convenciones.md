@@ -54,11 +54,14 @@ Va en camelCase:
 - **Cada capa exporta funciones** y se importa como espacio de nombres: `import * as healthRepository from './healthRepository'` → `healthRepository.verificarConexion()`.
 - **Los errores esperados se lanzan con `AppError`** y un código del catálogo de `@creditos/shared` (`codigosError.ts`). Un código nuevo se agrega ahí, con su status HTTP.
 - **Las respuestas exitosas se envían con `responderExito(res, data, { status, meta })`**, nunca armando el sobre a mano.
-- **Ningún módulo lee `process.env`**: todo sale de `config` (`src/config/config.ts`).
+- **Ningún módulo lee `process.env`**: todo sale de `config` (`src/config/config.ts`). Los scripts de una sola vez (`src/scripts/`) leen y validan sus propias variables.
+- **La entrada se valida con `validarEntrada(esquema, datos)`** y un esquema de `@creditos/shared`: devuelve los datos tipados, o lanza 400 `VALIDACION_FALLIDA` con un detalle por campo.
+- **Las rutas protegidas usan `autenticar()` y `autorizar(accion)`**, con una acción de la matriz de `@creditos/shared`.
+- **En los `*Repository.ts`, las claves de objeto pueden ir en PascalCase**: son los campos de relación de Prisma, que llevan el nombre de su tabla (`select: { Usuarios: … }`). El lint lo permite solo en esos archivos.
 
 ## Rutas de la API
 
 - **Una palabra por segmento.** Las rutas se diseñan para que no haga falta ningún separador; por ejemplo: `/api/creditos/{id}/estado`, `/api/auth/refresh`.
 - Los query params van en camelCase.
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

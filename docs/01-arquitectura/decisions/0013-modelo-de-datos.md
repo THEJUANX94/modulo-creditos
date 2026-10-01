@@ -35,7 +35,7 @@ El diccionario completo, tabla por tabla, está en [modelo-datos.md](../modelo-d
 4. **`Asociados` es una tabla propia**, con FK desde `Creditos`. La API sigue recibiendo y devolviendo `identificacionAsociado` y `nombreAsociado`.
 5. **Tipo de identificación**, con CC por defecto: CC, CE, PA, PPT y NIT. La unicidad real es tipo + número, y el formato depende del tipo: CC y NIT solo dígitos (el NIT sin dígito de verificación), y CE, PA y PPT alfanuméricos. **Extiende el contrato del enunciado** con un campo opcional.
 6. **Catálogos como tablas con el código como PK** (`TiposIdentificacion`, `TiposCredito`, `FormasPago`, `Roles`), con una columna `activo` para retirar valores sin borrarlos. **El estado no es tabla, es un `CHECK`**: está atado a la máquina de estados del código, y un estado nuevo exige código de todos modos.
-7. **Usuarios** inician sesión con su correo. Los refresh tokens y los eventos de seguridad se agregan en el paso de autenticación.
+7. **Usuarios** inician sesión con su correo. En el paso de autenticación se agregaron `debeCambiarContrasena` y las tablas `Sesiones` (con una sola sesión activa por usuario, garantizada por un índice único filtrado), `RefreshTokens` (solo el hash SHA-256) y `EventosSeguridad` (inmutable). Ver el [ADR 0016](0016-autenticacion-sesiones-y-permisos.md).
 
 ### Llaves
 
@@ -59,7 +59,7 @@ El diccionario completo, tabla por tabla, está en [modelo-datos.md](../modelo-d
 16. **El historial está en dos tablas**:
     - `HistorialCredito` guarda los cambios de estado, con las columnas del enunciado más un requestId. La creación es su primera fila: NULL → SOLICITADO.
     - `CambiosCredito` guarda los cambios de datos, una fila por campo, agrupadas por `operacionId`. El borrado lógico también va aquí.
-17. **Inmutabilidad en dos capas** para `HistorialCredito`, `CambiosCredito` y `WebhookIntentos`:
+17. **Inmutabilidad en dos capas** para `HistorialCredito`, `CambiosCredito`, `WebhookIntentos` y `EventosSeguridad`:
     - el login de la app tiene `DENY UPDATE` y ningún permiso de `DELETE`;
     - un trigger `INSTEAD OF UPDATE, DELETE` lanza un error incluso a un administrador.
 18. **Login de la app con mínimo privilegio (`appCreditos`)**: `SELECT`, `INSERT` y `UPDATE` sobre `dbo`, y **ningún `DELETE` en ninguna tabla**, porque todo borrado es lógico. Además tiene `DENY UPDATE` por columna sobre `Creditos (asociadoId, fechaSolicitud)`.
@@ -97,8 +97,7 @@ El diccionario completo, tabla por tabla, está en [modelo-datos.md](../modelo-d
 
 ## Por definir en la implementación
 
-- `RefreshTokens` y `EventosSeguridad` (paso de autenticación).
 - Cómo reclama el worker los eventos del outbox sin choques entre réplicas: puede requerir columnas en `WebhookEventos`.
 - La representación de `version` (`ROWVERSION`) en la API.
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01
