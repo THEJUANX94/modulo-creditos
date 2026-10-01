@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Builds y cobertura
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Vite
+.vite/
+
+# Editores y sistema operativo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
