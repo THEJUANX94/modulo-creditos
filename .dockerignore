@@ -1,0 +1,15 @@
+# Lo que no entra al contexto del build: dependencias y builds locales (de Windows o macOS, que no
+# sirven en Linux), secretos, y lo que ninguna imagen usa.
+**/node_modules
+**/dist
+**/coverage
+apps/api/src/generated
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+.git
+docs
+database
+Dockerfile
+docker-compose.yml

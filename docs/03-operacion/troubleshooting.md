@@ -73,7 +73,7 @@ Lo mismo pasa con un `UPDATE` o un `INSERT` suelto sobre una tabla con índice f
 
 **Causa.** SQL Server no está arriba. Con Docker Desktop, pasa cuando está cerrado o todavía arrancando: puede tardar varios minutos, con la distro WSL `docker-desktop` en `Stopped` y `docker info` sin responder.
 
-**Solución.** Esperar a que Docker Desktop termine de arrancar (`docker version` muestra la versión del servidor) y correr `docker compose up -d`. **La API no necesita reiniciarse**: el readiness vuelve a 200 apenas la BD responde.
+**Solución.** Esperar a que Docker Desktop termine de arrancar (`docker version` muestra la versión del servidor) y correr `docker compose up -d sqlserver dbInit`. **La API no necesita reiniciarse**: el readiness vuelve a 200 apenas la BD responde.
 
 ## La búsqueda con `%` o `_` devuelve todo
 
@@ -113,7 +113,31 @@ El receptor tiene que tener el mismo secreto. Con `NODE_ENV=production`, además
 
 **Causa.** El setup de las pruebas de integración recrea `ModuloCreditosPruebas` con `docker compose run dbInit`, y eso necesita Docker arriba y el `.env` de la raíz. El mensaje trae la salida de sqlcmd con el error concreto.
 
-**Solución.** Levantar Docker Desktop y correr `docker compose up -d`. Las unitarias no necesitan Docker: `pnpm vitest run --project shared --project api-unitarias`.
+**Solución.** Levantar Docker Desktop y correr `docker compose up -d sqlserver dbInit`. Si el mensaje dice "Falta … en .env", ver la entrada siguiente. Las unitarias no necesitan Docker: `pnpm vitest run --project shared --project api-unitarias`.
+
+## `docker compose` falla: "Falta JWT_SECRET en .env" (o cualquier otra variable)
+
+**Causa.** El compose exige todas sus variables obligatorias, aunque se levante un solo servicio: también `docker compose up -d sqlserver dbInit` y el `docker compose run dbInit` de las pruebas. Pasa con un `.env` creado antes del paso 8, que solo tenía las claves de SQL Server.
+
+**Solución.** `pnpm env:generar`: agrega las variables que faltan con claves aleatorias y no cambia las existentes.
+
+## `docker compose up` falla: "Bind for 0.0.0.0:4000 failed: port is already allocated"
+
+**Causa.** Otro proceso usa el puerto: casi siempre el mock (4000) levantado con `pnpm dev`, u otra aplicación en el 8080.
+
+**Solución.** Detener ese proceso, o cambiar el puerto en el `.env` (`MOCK_PORT`, `WEB_PORT` o `SQLSERVER_PORT`). El compose no publica la API, así que no choca con la de desarrollo en el 3000.
+
+## En Docker, los usuarios demo no aceptan la contraseña de `USUARIOS_DEMO_CLAVE`
+
+**Causa.** Los usuarios ya existían en la BD (por ejemplo, creados en desarrollo con la clave de `apps/api/.env`): el servicio `usuariosDemo` no toca un usuario existente, y su log dice "ya existe".
+
+**Solución.** Entrar con la contraseña con la que se crearon, o poner esa misma en `USUARIOS_DEMO_CLAVE` del `.env` de la raíz. Para empezar de cero: `docker compose down -v` y `docker compose up -d --wait`.
+
+## La web en Docker responde 502 Bad Gateway en `/api`
+
+**Causa.** Nginx no alcanza la API: se está reiniciando o no arrancó (por ejemplo, por una variable inválida).
+
+**Solución.** `docker compose ps` muestra su estado y `docker compose logs api` el motivo. Cuando la API vuelve, Nginx la encuentra solo: resuelve su dirección cada 10 s.
 
 ## Las pruebas fallan con `EADDRINUSE` en el puerto 4100 o 3998
 

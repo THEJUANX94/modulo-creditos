@@ -1,5 +1,6 @@
 // Crea un usuario demo por rol (ADR 0016). Es idempotente: si el correo ya existe, no lo toca.
 // Uso: pnpm -F @creditos/api usuarios:crear  (lee USUARIOS_DEMO_CLAVE del .env de la API)
+// En Docker lo corre el servicio usuariosDemo del docker-compose, compilado a dist/ (ADR 0022).
 import { esquemaContrasenaNueva, roles, type Rol } from '@creditos/shared';
 import { z } from 'zod';
 import { hashearContrasena } from '../modules/auth/contrasenas';

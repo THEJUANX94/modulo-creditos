@@ -1,3 +1,6 @@
+import { writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { setTimeout as esperar } from 'node:timers/promises';
 import { configWorker } from './config/configWorker';
 import { procesarLote, tamanoLote } from './modules/webhooks/despachadorWebhooks';
@@ -11,8 +14,25 @@ import { logger } from './shared/logger';
 const tiempoMaximoApagadoMs = 20_000;
 const apagado = new AbortController();
 
+// Latido para el healthcheck de Docker (ADR 0022): se escribe al empezar cada vuelta del ciclo. Si el
+// ciclo se cuelga, el archivo envejece y el contenedor queda unhealthy. Con la BD caída el ciclo sigue
+// vivo (registra el error y espera), así que el latido sigue: mide el worker, no la BD.
+const archivoLatido = path.join(tmpdir(), 'latidoWorker');
+let latidoFallido = false;
+
+async function latir(): Promise<void> {
+  try {
+    await writeFile(archivoLatido, new Date().toISOString());
+  } catch (error) {
+    // Se avisa una sola vez: el envío de los webhooks no depende del latido.
+    if (!latidoFallido) logger.warn({ err: error, archivoLatido }, 'No se pudo escribir el latido');
+    latidoFallido = true;
+  }
+}
+
 async function ciclo(): Promise<void> {
   while (!apagado.signal.aborted) {
+    await latir();
     let tomados = 0;
     try {
       tomados = await procesarLote();

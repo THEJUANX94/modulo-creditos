@@ -5,7 +5,7 @@ tags: [arquitectura, express, react, sql-server, webhook]
 
 # Arquitectura
 
-> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0021. Faltan el diagrama de arquitectura y la propuesta de despliegue.
+> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0022. Faltan el diagrama de arquitectura y la propuesta de despliegue.
 
 ## 1. Contexto
 
@@ -22,6 +22,8 @@ Una entidad del sector financiero solidario administra las solicitudes de crédi
 | Mock receptor | Node.js (`node:http`) + la librería oficial de Standard Webhooks | Simula el sistema externo: verifica la firma, deduplica y falla a voluntad, con una página para cambiar el modo en vivo ([ADR 0020](decisions/0020-mock-del-sistema-externo.md)) | En memoria; se pierde al reiniciar |
 
 Decisiones relacionadas: [ADR 0001](decisions/0001-monorepo-pnpm-workspaces.md) (repositorio y docker-compose), [ADR 0002](decisions/0002-express-typescript-react-vite.md) (stack), [ADR 0006](decisions/0006-webhook-outbox-transaccional.md) (worker y mock) y [ADR 0018](decisions/0018-webhook-entrega-firma-y-traza.md) (entrega, firma y traza).
+
+**En Docker** ([ADR 0022](decisions/0022-docker-compose-y-empaquetado.md)), Nginx es la única entrada: sirve la web y reenvía `/api` a la API, con las cabeceras de seguridad y la CSP. La API, el worker y SQL Server quedan en la red interna (SQL Server se publica solo para herramientas de desarrollo). La API y el worker usan la misma imagen con otro comando, y un servicio de una sola vez crea la BD y otro los usuarios demo.
 
 ## 3. Estructura del repositorio
 

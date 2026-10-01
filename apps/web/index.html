@@ -9,19 +9,7 @@
     />
     <title>Módulo de Créditos</title>
     <!-- Aplica el tema guardado (o el del sistema) antes de pintar, para que no parpadee. -->
-    <script>
-      (function () {
-        var tema = null;
-        try {
-          tema = localStorage.getItem('tema');
-        } catch (e) {}
-        var oscuro =
-          tema === 'dark' ||
-          (tema !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
-        document.documentElement.classList.toggle('dark', oscuro);
-        document.documentElement.style.colorScheme = oscuro ? 'dark' : 'light';
-      })();
-    </script>
+    <script src="/tema.js"></script>
   </head>
   <body>
     <div id="raiz"></div>

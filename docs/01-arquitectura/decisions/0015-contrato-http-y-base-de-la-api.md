@@ -114,7 +114,7 @@ Con `pnpm -F @creditos/api build` y `node dist/server.js` contra el compose:
 | Configuración inválida | La API no arranca y lista cada variable con su problema |
 | `dbInit` | Crea la BD en el primer arranque y no hace nada en el segundo |
 
-**Pendiente de verificar:** el apagado ordenado. Windows no entrega SIGTERM/SIGINT a un proceso que no esté en la misma consola, así que se prueba en el paso 8, con la API en un contenedor Linux.
+**Apagado ordenado**: Windows no entrega SIGTERM/SIGINT a un proceso que no esté en la misma consola, así que se verificó en el contenedor Linux ([ADR 0022](0022-docker-compose-y-empaquetado.md)): con `docker compose stop`, la API cierra sus conexiones y termina con código 0.
 
 ## Por definir en la implementación
 

@@ -25,14 +25,14 @@ Ya estaban decididos:
 
 | Pieza | Elección | Por qué |
 |---|---|---|
-| Origen | **El mismo que la API**: la web llama a `/api`. En desarrollo, Vite reenvía `/api` a `localhost:3000`; en Docker lo hará Nginx | La cookie `SameSite=Strict` del refresh viaja sin trucos y CORS no hace falta. Es como se desplegaría en producción |
+| Origen | **El mismo que la API**: la web llama a `/api`. En desarrollo, Vite reenvía `/api` a `localhost:3000`; en Docker lo hace Nginx ([ADR 0022](0022-docker-compose-y-empaquetado.md)) | La cookie `SameSite=Strict` del refresh viaja sin trucos y CORS no hace falta. Es como se desplegaría en producción |
 | Router | **React Router 8**. Las rutas protegidas van con `RutaProtegida`, que exige sesión, la contraseña definitiva y el permiso de la sección | Es el estándar, conocido por cualquier evaluador |
 | Filtros del listado | **En la URL**, validados con `esquemaFiltrosCreditos` de `shared` | Un listado filtrado se puede recargar o compartir, y el dashboard enlaza cada estado al listado filtrado |
 | Datos de la API | **TanStack Query**: una clave por consulta, y cada cambio invalida lo que deja desactualizado | Carga, error y refresco sin código repetido. Una notificación PENDIENTE se vuelve a consultar cada 5 s y se ve llegar a ENTREGADO |
 | Formularios | **React Hook Form con los esquemas Zod de `shared`**, validando al salir de cada campo | El mismo mensaje en español en el navegador y en la API. Los errores de la API (400 por campo, nombre que no coincide, duplicado) también se muestran debajo de su campo |
 | Cliente HTTP | `lib/api.ts`: **valida cada respuesta con el esquema de `shared`** y convierte los errores en `ErrorApi` con su código y su `requestId` | Si la API se aparta del contrato, falla en el cliente y no en un componente |
 | Tabla | **TanStack Table v9** (`useTable`), con el orden y la paginación en el servidor | La decisión del ADR 0002, con columnas estables entre renders |
-| Tema | **`lib/tema.tsx` propio**, con la clase `.dark`. Un script en `index.html` aplica el tema antes de pintar | `next-themes`, que trae shadcn, inyecta un `<script>` dentro de React y React 19 lo rechaza en el cliente |
+| Tema | **`lib/tema.tsx` propio**, con la clase `.dark`. `public/tema.js`, cargado en el `<head>`, aplica el tema antes de pintar. Era un script inline; pasó a archivo para que la CSP no necesite excepciones ([ADR 0022](0022-docker-compose-y-empaquetado.md)) | `next-themes`, que trae shadcn, inyecta un `<script>` dentro de React y React 19 lo rechaza en el cliente |
 | Carga | **Cada pantalla se descarga al entrar** (`React.lazy`) | La carga inicial baja de 1 MB a 324 kB (103 kB gzip): Recharts se descarga solo con el dashboard |
 
 ### Sesión en el navegador

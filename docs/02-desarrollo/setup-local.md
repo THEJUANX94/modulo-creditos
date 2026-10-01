@@ -5,7 +5,42 @@ tags: [setup, desarrollo, pnpm, node, docker]
 
 # Configurar el entorno de desarrollo local
 
-> Cubre el workspace, la base de datos, la API, el worker, el mock del sistema externo, la web y las pruebas. El sistema completo con un solo `docker compose` llega en el paso 8.
+> Cubre el sistema completo con Docker, y el entorno de desarrollo con pnpm: el workspace, la base de datos, la API, el worker, el mock del sistema externo, la web y las pruebas.
+
+## Levantar el sistema completo con Docker
+
+Solo necesita Docker Desktop (o Docker Engine con Compose v2). Detalle en el [ADR 0022](../01-arquitectura/decisions/0022-docker-compose-y-empaquetado.md).
+
+1. **Crear el `.env` de la raíz con claves aleatorias.** Con Node y pnpm:
+
+   ```bash
+   pnpm env:generar
+   ```
+
+   Sin Node, con el mismo script dentro de un contenedor (en PowerShell: `docker run --rm -v "${PWD}:/repo" -w /repo node:24.21.0-alpine3.24 node scripts/generarEnv.ts`):
+
+   ```bash
+   docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/repo" -w /repo node:24.21.0-alpine3.24 node scripts/generarEnv.ts
+   ```
+
+   Si el `.env` ya existe, solo agrega las variables que le falten.
+
+2. **Construir y levantar todo.** La primera vez descarga SQL Server (unos 2,3 GB) y construye las imágenes (un par de minutos):
+
+   ```bash
+   docker compose up -d --build --wait
+   ```
+
+3. **Entrar.**
+
+   | Qué | Dónde |
+   |---|---|
+   | La web | **http://localhost:8080**, con `admin@creditos.test` (o `asesor@`, `analista@`, `tesoreria@`) y la contraseña de `USUARIOS_DEMO_CLAVE` del `.env` |
+   | Swagger | **http://localhost:8080/api/docs** |
+   | El mock del sistema externo | **http://localhost:4000**: lo que recibió y su modo, que se cambia en vivo |
+   | SQL Server | `localhost:1433`, para herramientas como Azure Data Studio |
+
+`docker compose ps` muestra el estado y la salud de cada servicio, y `docker compose logs -f api worker` los logs. `docker compose down` lo detiene sin borrar los datos; `docker compose down -v` borra también la BD.
 
 ## Requisitos
 
@@ -24,13 +59,13 @@ npm install -g pnpm@12.8.1
 
 En Windows no basta con el cambio automático de versión de pnpm. Ver [troubleshooting.md](../03-operacion/troubleshooting.md#pnpm-12-no-arranca-en-windows-no-se-reconoce-como-un-comando).
 
-## Primer arranque
+## Desarrollo con pnpm: primer arranque
 
-1. **Variables de entorno.** Copiar a `.env` el `.env.example` de la raíz, el de `apps/api` y el de `apps/webhookMock`, y reemplazar las claves. `APP_DB_PASSWORD` de la raíz tiene que coincidir con la clave de `DATABASE_URL` de la API, y `WEBHOOK_SECRETO` tiene que ser el mismo en la API y en el mock. Detalle en [variables-entorno.md](variables-entorno.md).
-2. **Base de datos.** El compose levanta SQL Server 2022, y `dbInit` corre los scripts de `database/` si la BD no existe:
+1. **Variables de entorno.** El `.env` de la raíz se crea con `pnpm env:generar`. Copiar a `.env` el `.env.example` de `apps/api` y el de `apps/webhookMock`, y reemplazar las claves. `APP_DB_PASSWORD` de la raíz tiene que coincidir con la clave de `DATABASE_URL` de la API, y `WEBHOOK_SECRETO` tiene que ser el mismo en la API y en el mock. Detalle en [variables-entorno.md](variables-entorno.md).
+2. **Base de datos.** Solo la infraestructura del compose: SQL Server 2022, y `dbInit`, que corre los scripts de `database/` si la BD no existe:
 
    ```bash
-   docker compose up -d
+   docker compose up -d sqlserver dbInit
    ```
 
    El primer arranque descarga la imagen de SQL Server (unos 2,3 GB) y la licencia es la de la edición Developer: **solo para desarrollo y pruebas**. Los datos quedan en el volumen `sqlserverDatos` y sobreviven a `docker compose down`. Para borrarlos y recrear la BD desde cero:
@@ -89,7 +124,7 @@ pnpm bloquea los scripts de instalación de las dependencias que no están en `a
 
 `database/*.sql` es la fuente de verdad. Después de cambiar un script:
 
-1. Recrear la BD con `docker compose down -v` y `docker compose up -d`.
+1. Recrear la BD con `docker compose down -v` y `docker compose up -d sqlserver dbInit`.
 2. Introspeccionar, que reescribe `apps/api/prisma/schema.prisma` (no se edita a mano):
 
    ```bash
@@ -110,12 +145,13 @@ Desde la raíz:
 
 | Comando | Qué hace |
 |---|---|
-| `pnpm typecheck` | `tsc --noEmit` en cada paquete |
+| `pnpm typecheck` | `tsc --noEmit` en cada paquete y en `scripts/` |
 | `pnpm lint` | ESLint con reglas con tipos y la convención de nombres |
 | `pnpm format` | Formatea con Prettier (no toca `docs/`) |
 | `pnpm format:check` | Verifica el formato sin modificar archivos |
 | `pnpm test` | Todas las pruebas (Vitest): unitarias e integración. Ver más abajo |
 | `pnpm test:coverage` | Lo mismo, con el reporte de cobertura (texto y `coverage/index.html`) |
+| `pnpm env:generar` | Crea el `.env` de la raíz con claves aleatorias, o le agrega las variables que falten |
 
 ## Pruebas automatizadas
 
@@ -123,7 +159,7 @@ Desde la raíz:
 pnpm test
 ```
 
-- **Las de integración necesitan Docker** con el compose de desarrollo (`docker compose up -d`). Antes de correrlas, el setup recrea la BD `ModuloCreditosPruebas` con los scripts de `database/` y crea un usuario por rol. La BD de desarrollo no se toca.
+- **Las de integración necesitan Docker** con SQL Server arriba (`docker compose up -d sqlserver dbInit`, o el sistema completo) y el `.env` de la raíz completo. Antes de correrlas, el setup recrea la BD `ModuloCreditosPruebas` con los scripts de `database/` y crea un usuario por rol. La BD de desarrollo no se toca.
 - **No hace falta configurar nada**: la conexión sale de `DATABASE_URL` de `apps/api/.env`, cambiando solo el nombre de la BD, y los secretos de las pruebas son aleatorios.
 - **Las unitarias corren sin Docker**, en unos segundos:
 

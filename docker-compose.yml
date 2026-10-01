@@ -1,12 +1,54 @@
-# Infraestructura de desarrollo: SQL Server y la inicialización de la BD.
-# En el paso 8 se agregan la API, el worker, la web y el mock del webhook.
-#   docker compose up -d
-# Las variables salen de .env (copiar .env.example).
+# Sistema completo (ADR 0022): SQL Server, la BD, los usuarios demo, la API, el worker del webhook,
+# la web y el mock del sistema externo.
+#   pnpm env:generar               crea .env con claves aleatorias (o agrega las que falten)
+#   docker compose up -d --build
+#   Web http://localhost:8080 · Swagger http://localhost:8080/api/docs · Mock http://localhost:4000
+# Para desarrollar con pnpm (setup-local.md), solo la infraestructura:
+#   docker compose up -d sqlserver dbInit
 name: modulo-creditos
+
+# Es un entorno para evaluar en local, no producción: NODE_ENV=development deja el webhook ir por
+# http al mock. Producción exige https (ADR 0018) y se describe en docs/03-operacion/deploy.md.
+
+x-logs: &logs
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '3'
+
+# Los contenedores propios: sistema de archivos de solo lectura (con /tmp en memoria), sin
+# capabilities de Linux, sin escalar privilegios, y tini como PID 1 para reenviar las señales.
+x-endurecido: &endurecido
+  <<: *logs
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  init: true
+  restart: unless-stopped
+
+# La API, el worker y los usuarios demo usan la misma imagen, con otro comando.
+x-imagenApi: &imagenApi
+  build:
+    context: .
+    target: api
+  image: modulo-creditos/api:local
+
+x-healthcheck: &healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 3
+  start_period: 20s
+
+# Login de la app con mínimo privilegio. trustServerCertificate porque el certificado del contenedor
+# es autofirmado; en producción va el certificado real.
+x-urlBd: &urlBd 'sqlserver://sqlserver:1433;database=ModuloCreditos;user=appCreditos;password={${APP_DB_PASSWORD:?Falta APP_DB_PASSWORD en .env}};encrypt=true;trustServerCertificate=true'
 
 services:
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    <<: *logs
+    image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04
     environment:
       ACCEPT_EULA: 'Y'
       MSSQL_PID: Developer
@@ -23,10 +65,12 @@ services:
       timeout: 5s
       retries: 20
       start_period: 20s
+    restart: unless-stopped
 
   # Corre los scripts de database/ una sola vez, cuando ModuloCreditos no existe, y termina.
   dbInit:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    <<: *logs
+    image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -37,6 +81,101 @@ services:
       - ./database:/database:ro
     entrypoint: ['/bin/bash', '/database/inicializar.sh']
     restart: 'no'
+
+  # Crea un usuario demo por rol si no existe (idempotente) y termina.
+  usuariosDemo:
+    <<: [*endurecido, *imagenApi]
+    command: ['node', 'dist/crearUsuariosDemo.js']
+    depends_on:
+      dbInit:
+        condition: service_completed_successfully
+    environment:
+      LOG_LEVEL: warn
+      DATABASE_URL: *urlBd
+      USUARIOS_DEMO_CLAVE: ${USUARIOS_DEMO_CLAVE:?Falta USUARIOS_DEMO_CLAVE en .env}
+    restart: 'no'
+
+  api:
+    <<: [*endurecido, *imagenApi]
+    command: ['node', 'dist/server.js']
+    depends_on:
+      dbInit:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: info
+      PORT: 3000
+      DATABASE_URL: *urlBd
+      CORS_ORIGINS: http://localhost:${WEB_PORT:-8080}
+      # Nginx delante: la IP del cliente sale de X-Forwarded-For (rate limit y auditoría).
+      TRUST_PROXY: 1
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env}
+      DOCS_HABILITADA: 'true'
+    # Readiness: la API está lista cuando responde y la BD también.
+    healthcheck:
+      <<: *healthcheck
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3000/api/health/ready']
+    # El apagado ordenado espera hasta 10 s las peticiones en curso.
+    stop_grace_period: 15s
+
+  worker:
+    <<: [*endurecido, *imagenApi]
+    command: ['node', 'dist/worker.js']
+    depends_on:
+      dbInit:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: info
+      DATABASE_URL: *urlBd
+      WEBHOOK_URL: http://webhookMock:4000/webhooks/creditos
+      WEBHOOK_SECRETO: ${WEBHOOK_SECRETO:?Falta WEBHOOK_SECRETO en .env}
+    # Sano si el ciclo escribió su latido hace menos de 60 s. Tiene que ser mayor que una vuelta
+    # completa: el intervalo (2 s) más un lote con el timeout de cada envío (15 s).
+    healthcheck:
+      <<: *healthcheck
+      test:
+        - CMD
+        - node
+        - -e
+        - "const f = require('node:fs').statSync('/tmp/latidoWorker'); process.exit(Date.now() - f.mtimeMs < 60000 ? 0 : 1)"
+    # El apagado ordenado espera hasta 20 s a que el lote en curso registre su resultado.
+    stop_grace_period: 25s
+
+  web:
+    <<: *endurecido
+    build:
+      context: .
+      target: web
+    image: modulo-creditos/web:local
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+    environment:
+      NGINX_ENTRYPOINT_QUIET_LOGS: 1
+    healthcheck:
+      <<: *healthcheck
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/']
+
+  # El sistema externo que recibe credito.creado (ADR 0020). Su página muestra lo recibido y
+  # permite cambiar su comportamiento en vivo.
+  webhookMock:
+    <<: *endurecido
+    build:
+      context: .
+      target: webhookMock
+    image: modulo-creditos/webhook-mock:local
+    ports:
+      - '${MOCK_PORT:-4000}:4000'
+    environment:
+      PORT: 4000
+      WEBHOOK_SECRETO: ${WEBHOOK_SECRETO:?Falta WEBHOOK_SECRETO en .env}
+      MOCK_MODO: acepta
+    healthcheck:
+      <<: *healthcheck
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:4000/salud']
 
 volumes:
   sqlserverDatos:

@@ -5,6 +5,33 @@ tags: [modulo-creditos, changelog]
 
 # Bitácora de cambios — Módulo de Créditos
 
+## [0.1.0] - 2026-10-01 — Paso 8: docker-compose del sistema completo
+
+`docker compose up` levanta todo el sistema, con Nginx como única entrada. Decisiones en el [ADR 0022](01-arquitectura/decisions/0022-docker-compose-y-empaquetado.md).
+
+### Added
+- `Dockerfile` en la raíz, con targets `api` (la API y el worker), `webhookMock` y `web`. Imágenes base con versión exacta: Node 24.21 sobre Alpine 3.24 y Nginx 1.31 sin privilegios. `.dockerignore`.
+- `docker-compose.yml` completo: `sqlserver`, `dbInit`, `usuariosDemo`, `api`, `worker`, `web` y `webhookMock`, con healthchecks, orden de arranque, `stop_grace_period` y logs rotados. SQL Server fijado en 2022-CU27.
+  - Los contenedores propios corren con el sistema de archivos de solo lectura, sin capabilities, con `no-new-privileges`, con un usuario sin privilegios y con tini como PID 1.
+- `apps/web/nginx/`: el reenvío de `/api`, la caché de los assets, la SPA, gzip y las cabeceras de seguridad con una CSP sin scripts inline.
+- `pnpm env:generar` (`scripts/generarEnv.ts`): crea el `.env` de la raíz con claves aleatorias, o le agrega las variables que falten.
+- Latido del worker (`/tmp/latidoWorker`), que usa su healthcheck.
+- `crearUsuariosDemo` compilado a `dist/` para el servicio `usuariosDemo`.
+
+### Changed
+- El script del tema pasa de inline en `index.html` a `apps/web/public/tema.js`, para que la CSP no necesite excepciones.
+- `.env.example` de la raíz: las variables del sistema completo.
+- `setup-local.md`: la forma rápida con Docker; para desarrollar con pnpm, la infraestructura se levanta con `docker compose up -d sqlserver dbInit`.
+- `variables-entorno.md`, `troubleshooting.md` (cuatro entradas nuevas), `architecture.md`, `convenciones.md` (los nombres de Docker) y el índice.
+- ADR 0001, 0015, 0018, 0019, 0020 y 0021: sus pendientes del paso 8 pasan a resueltos en el ADR 0022.
+- `scripts/` con su propio `tsconfig.json`, incluido en `pnpm typecheck`; `@types/node` en la raíz.
+
+### Fixed
+- La imagen de la API pesaba 800 MB: `pnpm deploy --legacy` incluía la CLI de Prisma (con Studio, TypeScript y React), que `@prisma/client` declara como dependencia opcional. Sin `--legacy`, 466 MB.
+
+### Verified
+- El apagado ordenado de la API y del worker en Linux, pendiente desde el paso 4: con un envío en curso, el worker registró el `TIMEOUT` y terminó con código 0, y el evento se entregó al volver a levantarlo.
+
 ## [0.1.0] - 2026-10-01 — Paso 7: frontend
 
 La interfaz web completa, con el sistema visual de la skill ui-ux-pro-max aplicado. Decisiones en el [ADR 0021](01-arquitectura/decisions/0021-frontend.md).

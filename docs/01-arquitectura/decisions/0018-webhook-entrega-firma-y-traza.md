@@ -114,7 +114,7 @@ Todo es configurable por variables (`WEBHOOK_MAX_INTENTOS`, `WEBHOOK_BACKOFF_BAS
 - **Lectura**: cada 2 s, en lotes de 10, enviados en paralelo con un timeout cada uno. Si el lote sale lleno, vuelve a leer sin esperar. La consulta usa el índice filtrado `IX_WebhookEventos_pendientes`.
 - **Cliente HTTP: `fetch` nativo de Node 24**, sin dependencias nuevas.
 - **Logs**: cada envío se registra con el requestId de la petición que creó el crédito: `info` si se entrega, `warn` si se reprograma y `error` si queda `FALLIDO`, con el motivo. El cuerpo de un rechazo no va al log, porque podría repetir datos del payload; queda en la traza.
-- **Apagado ordenado**: con `SIGTERM`, deja de tomar eventos y espera a que el lote en curso registre su resultado, con un máximo de 20 s. Docker espera 10 s por defecto, así que el compose del paso 8 fija `stop_grace_period: 25s`. Si aun así muere a mitad, el lease devuelve el evento.
+- **Apagado ordenado**: con `SIGTERM`, deja de tomar eventos y espera a que el lote en curso registre su resultado, con un máximo de 20 s. Docker espera 10 s por defecto, así que el compose fija `stop_grace_period: 25s` ([ADR 0022](0022-docker-compose-y-empaquetado.md)). Si aun así muere a mitad, el lease devuelve el evento.
 
 ### Configuración separada por proceso
 
@@ -223,11 +223,11 @@ En todos los casos, **la creación del crédito no depende del webhook**: la API
 
 Desde el paso 5, estos escenarios están en la suite automatizada (`webhook.test.ts` y `configProcesos.test.ts`, [ADR 0019](0019-implementacion-de-las-pruebas.md)). Esa suite encontró que dos reclamos simultáneos no se repartían los eventos; se corrigió la consulta y este script volvió a pasar completo: 51 de 51.
 
-**Pendiente de verificar:** el apagado ordenado. En Windows, `SIGTERM` termina el proceso sin pasar por el handler; se verifica en el contenedor Linux (paso 8).
+**Apagado ordenado**: en Windows, `SIGTERM` termina el proceso sin pasar por el handler, así que se verificó en el contenedor Linux ([ADR 0022](0022-docker-compose-y-empaquetado.md)). Con un envío en curso al mock en modo lento, el worker esperó el envío, registró el `TIMEOUT` y terminó con código 0; al volver a levantarlo, el evento se entregó en el intento 2.
 
 ## Por definir en la implementación
 
-- En el compose (paso 8): `stop_grace_period: 25s` para el worker, y cómo se cumple https si la demo corre con `NODE_ENV=production`.
+Resuelto en el [ADR 0022](0022-docker-compose-y-empaquetado.md): el compose fija `stop_grace_period: 25s` para el worker y corre con `NODE_ENV=development`, porque es un entorno para evaluar en local. Así la regla "con `production`, https" sigue sin excepciones y el webhook va al mock por http.
 
 Resuelto en el [ADR 0020](0020-mock-del-sistema-externo.md): el mock escucha en `http://localhost:4000/webhooks/creditos`, verifica la firma con la librería oficial (ventana de 5 minutos), deduplica por `webhook-id` y tiene seis modos que se cambian en vivo.
 

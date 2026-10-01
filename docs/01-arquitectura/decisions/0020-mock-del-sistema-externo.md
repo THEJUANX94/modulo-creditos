@@ -95,6 +95,6 @@ El [ADR 0006](0006-webhook-outbox-transaccional.md) decidió un mock receptor co
 
 ## Por definir en la implementación
 
-- El servicio del mock en el compose (paso 8), con su healthcheck en `/salud`.
+Resuelto en el [ADR 0022](0022-docker-compose-y-empaquetado.md): el servicio `webhookMock` del compose, con su healthcheck en `/salud` y la página publicada en el puerto 4000. El worker le envía a `http://webhookMock:4000/webhooks/creditos`.
 
 Última actualización: 2026-10-01

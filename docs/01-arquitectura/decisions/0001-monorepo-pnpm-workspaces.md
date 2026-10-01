@@ -49,13 +49,13 @@ El gestor de paquetes es **pnpm**. La prueba recomienda además un `docker-compo
   - Quien evalúa levanta el sistema completo con un solo comando, sin preparar nada en su máquina aparte de Docker.
 - **Costos aceptados**:
   - `@creditos/shared` se consume desde Node (API) y desde el navegador (web), así que su configuración de TypeScript y de build tiene que servir para ambos.
-  - El compose tiene seis servicios que mantener.
+  - El compose tiene siete servicios que mantener (con los usuarios demo, que agregó el [ADR 0022](0022-docker-compose-y-empaquetado.md)).
   - npm no admite mayúsculas en los nombres de paquete, así que los paquetes son una excepción a camelCase (ver [convenciones](../../02-desarrollo/convenciones.md)).
 
 ## Por definir en la implementación
 
-Resuelto en el [ADR 0013](0013-modelo-de-datos.md) y el [ADR 0015](0015-contrato-http-y-base-de-la-api.md): SQL Server 2022, y el compose de infraestructura (`sqlserver` + `dbInit`) existe desde el paso 4. El paso 8 lo completa con el resto de servicios.
+Resuelto en el [ADR 0013](0013-modelo-de-datos.md) y el [ADR 0015](0015-contrato-http-y-base-de-la-api.md): SQL Server 2022, y el compose de infraestructura (`sqlserver` + `dbInit`) existe desde el paso 4. El [ADR 0022](0022-docker-compose-y-empaquetado.md) lo completa: un solo Dockerfile con targets, la API y el worker solo en la red interna, Nginx como única entrada y los contenedores endurecidos.
 
 Resuelto en el [ADR 0012](0012-toolchain-del-monorepo.md): `shared` se consume desde sus fuentes TypeScript, el mock vive en `apps/webhookMock` (paquete `@creditos/webhook-mock`), Node 24 y pnpm 12.8.1.
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

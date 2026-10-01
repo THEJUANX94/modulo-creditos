@@ -32,6 +32,8 @@ Va en camelCase:
 | Variables de entorno | UPPER_SNAKE | `DATABASE_URL` | Convención universal |
 | Valores fijados por el enunciado | Como en el enunciado | `SOLICITADO`, `EN_ESTUDIO`, `CREDITO_NOT_FOUND`, `LIBRE_INVERSION`, `NOMINA`, `credito.creado` | Son datos, no identificadores de código, y coinciden 1:1 con lo que espera quien evalúa |
 | Paquetes del workspace | Minúsculas con scope | `@creditos/api`, `@creditos/web`, `@creditos/shared` | npm no admite mayúsculas en los nombres de paquete |
+| Imágenes y proyecto de Docker | Minúsculas con guiones | `modulo-creditos/api`, `modulo-creditos/webhook-mock` | Docker no admite mayúsculas en esos nombres. Los servicios del compose sí van en camelCase (`dbInit`, `webhookMock`) |
+| Archivos con nombre fijado por su herramienta | Como lo espera la herramienta | `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `nginx/default.conf` | Son los nombres que Docker y Nginx buscan por defecto |
 | Documentación (`docs/`) | kebab-case | `decisions/0001-monorepo-pnpm-workspaces.md` | Lo fija el formato OKF |
 | Repositorio en GitHub | kebab-case | `modulo-creditos` | Convención de nombres de repositorio en GitHub |
 | Scripts compuestos de `package.json` | Con dos puntos | `format:check`, `dev:worker` | Convención de npm para agrupar variantes de un script |

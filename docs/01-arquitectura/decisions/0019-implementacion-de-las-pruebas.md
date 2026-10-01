@@ -116,7 +116,7 @@ La prueba de dos workers simultáneos encontró un defecto del [ADR 0018](0018-w
   - La integración necesita Docker con SQL Server arriba, y tarda unos 50 s (la BD se recrea en ~3 s).
   - Los scripts SQL exigen `-v NOMBRE_BD=…` al correrlos a mano.
   - El receptor de las pruebas usa el puerto 4100, y el proceso de configuración el 3998: tienen que estar libres.
-  - El apagado ordenado del worker sigue sin prueba automatizada: en Windows, `SIGTERM` no pasa por el handler. Se verifica en el contenedor Linux (paso 8).
+  - El apagado ordenado del worker no tiene prueba automatizada: en Windows, `SIGTERM` no pasa por el handler. Se verificó a mano en el contenedor Linux ([ADR 0022](0022-docker-compose-y-empaquetado.md)).
 
 ## Verificación (2026-10-01)
 

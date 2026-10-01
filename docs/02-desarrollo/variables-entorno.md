@@ -11,13 +11,29 @@ Cada componente tiene su `.env` (que git ignora) y su `.env.example` (versionado
 
 ## docker-compose — `.env` de la raíz
 
+**`pnpm env:generar` crea este `.env` con claves aleatorias**, o le agrega a uno existente las variables que le falten, sin cambiar las que ya tiene ([ADR 0022](../01-arquitectura/decisions/0022-docker-compose-y-empaquetado.md)).
+
 | Variable | Obligatoria | Default | Secreto | Para qué |
 |---|---|---|---|---|
-| `MSSQL_SA_PASSWORD` | Sí | — | **Sí** | Clave del administrador (`sa`) de SQL Server. SQL Server exige al menos 8 caracteres con mayúsculas, minúsculas, números y símbolos |
-| `APP_DB_PASSWORD` | Sí | — | **Sí** | Clave del login `appCreditos`, que crea `001-crearBaseDatos.sql`. Tiene que coincidir con la de `DATABASE_URL` en `apps/api/.env` |
+| `MSSQL_SA_PASSWORD` | Sí | — | **Sí** | Clave del administrador (`sa`) de SQL Server. Al menos 8 caracteres con tres de estos grupos: mayúsculas, minúsculas, números y símbolos. Se fija al crear el volumen: cambiarla después exige recrearlo (`docker compose down -v`) |
+| `APP_DB_PASSWORD` | Sí | — | **Sí** | Clave del login `appCreditos`, que crea `001-crearBaseDatos.sql`. El compose arma con ella la `DATABASE_URL` de la API y del worker. En desarrollo con pnpm, tiene que coincidir con la de `DATABASE_URL` en `apps/api/.env` |
 | `SQLSERVER_PORT` | No | `1433` | No | Puerto de SQL Server en la máquina local |
+| `WEB_PORT` | No | `8080` | No | Puerto de la web (y de la API en `/api`) en la máquina local |
+| `MOCK_PORT` | No | `4000` | No | Puerto de la página del mock en la máquina local |
+| `JWT_SECRET` | Sí | — | **Sí** | Clave de los access tokens de la API: al menos 32 caracteres aleatorios |
+| `WEBHOOK_SECRETO` | Sí | — | **Sí** | Secreto de la firma del webhook (`whsec_` + base64 de al menos 32 bytes). Lo reciben el worker y el mock |
+| `USUARIOS_DEMO_CLAVE` | Sí | — | **Sí** | Contraseña de los cuatro usuarios demo, que crea el servicio `usuariosDemo`. Un usuario que ya existía conserva la suya |
 
-El compose no arranca si falta una variable obligatoria, y dice cuál.
+El compose no arranca si falta una variable obligatoria, y dice cuál. Eso incluye `docker compose run dbInit`, el que usan las pruebas: un `.env` de antes del paso 8 se completa con `pnpm env:generar`.
+
+**El compose fija el resto**, y cada servicio recibe solo las suyas:
+
+- `NODE_ENV=development`: es un entorno para evaluar en local; producción exige https en el webhook;
+- `TRUST_PROXY=1`, porque Nginx va delante;
+- `CORS_ORIGINS` con el puerto de la web, y `DOCS_HABILITADA=true`;
+- `WEBHOOK_URL` apuntando al mock por la red interna.
+
+La API no recibe el secreto del webhook, el worker no recibe `JWT_SECRET` y Nginx no recibe ninguna.
 
 ## API y worker — `apps/api/.env`
 
