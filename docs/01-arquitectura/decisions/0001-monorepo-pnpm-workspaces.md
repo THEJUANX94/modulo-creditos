@@ -54,9 +54,8 @@ El gestor de paquetes es **pnpm**. La prueba recomienda además un `docker-compo
 
 ## Por definir en la implementación
 
-- Cómo consumen las apps el paquete `shared`: compilado a `dist/` o directamente desde las fuentes TypeScript.
-- En qué carpeta del workspace vive el mock receptor del webhook.
-- Versión de Node fijada para el proyecto (`engines`, `.nvmrc`) y versión de pnpm (`packageManager`).
 - Imagen y versión de SQL Server en Docker, y cómo se ejecuta la inicialización de la BD.
+
+Resuelto en el [ADR 0012](0012-toolchain-del-monorepo.md): `shared` se consume desde sus fuentes TypeScript, el mock vive en `apps/webhookMock` (paquete `@creditos/webhook-mock`), Node 24 y pnpm 12.8.1.
 
 Última actualización: 2026-09-30

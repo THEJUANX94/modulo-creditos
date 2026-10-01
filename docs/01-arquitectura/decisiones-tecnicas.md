@@ -20,6 +20,7 @@ Las decisiones que dan forma al Módulo de Créditos, en una línea cada una. Ca
 | 9 | Una sola entidad; multi-entidad queda como propuesta documentada | La prueba no exige implementarla, y la ruta queda escrita para la pregunta de escalabilidad | [0009](decisions/0009-una-entidad-multi-entidad-como-propuesta.md) |
 | 10 | Logs técnicos con pino (JSON a stdout), correlacionados por requestId hasta el webhook y sin datos personales completos. Auditoría inmutable en la BD de cambios de estado, cambios de datos y eventos de seguridad | Diagnóstico (logs) y rendición de cuentas (auditoría) son necesidades distintas, con garantías distintas | [0010](decisions/0010-logs-tecnicos-y-auditoria.md) |
 | 11 | Diseño visual guiado por la skill ui-ux-pro-max: estilo Minimalism & Swiss + Accessible, paleta de banca en modo claro y oscuro, IBM Plex Sans | Cada valor visual tiene una fuente rastreable y el contraste está medido antes de escribir código | [0011](decisions/0011-diseno-visual-ui-ux-pro-max.md) |
+| 12 | Toolchain: Node 24 LTS, pnpm 12 con catalogs, TypeScript 6.0 estricto, Express 5, ESM, tsx + tsup, ESLint con reglas con tipos y convención de nombres, Prettier | TypeScript 6.0 es la última versión compatible con el lint con tipos, y `shared` desde las fuentes evita un paso de build | [0012](decisions/0012-toolchain-del-monorepo.md) |
 
 El idioma del código y las convenciones de nombrado están en [convenciones.md](../02-desarrollo/convenciones.md). Los parámetros visuales completos están en [design-system.md](../05-frontend/design-system.md).
 

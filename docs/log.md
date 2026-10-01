@@ -5,6 +5,27 @@ tags: [modulo-creditos, changelog]
 
 # Bitácora de cambios — Módulo de Créditos
 
+## [0.1.0] - 2026-09-30 — Scaffold del monorepo
+
+Los paquetes existen y compilan, todavía sin funcionalidad. Decisiones en el [ADR 0012](01-arquitectura/decisions/0012-toolchain-del-monorepo.md).
+
+### Added
+- Workspace de pnpm 12.8.1 (`pnpm-workspace.yaml`) con catalogs para `typescript` y `@types/node` y `allowBuilds` para `esbuild`.
+- `package.json` raíz (`modulo-creditos` 0.1.0) con los scripts `typecheck`, `lint`, `format` y `format:check`, `engines` en Node `^24.0.0` y `.nvmrc`.
+- `tsconfig.base.json`: ES2024, ESNext + resolución Bundler, `strict` con extras y `types: []`.
+- `eslint.config.js`: `recommendedTypeChecked` + `naming-convention` según las convenciones + `eslint-config-prettier`. `.prettierrc.json` y `.prettierignore` (ignora `docs/`).
+- Paquetes `@creditos/shared`, `@creditos/api` (tsx + tsup, entradas `server.ts` y `worker.ts`), `@creditos/web` y `@creditos/webhook-mock`, cada uno con un archivo de entrada vacío.
+- `02-desarrollo/setup-local.md` (parcial) y `03-operacion/troubleshooting.md` con el problema de pnpm 12 en Windows.
+
+### Changed
+- ADR 0001 y 0002: sus pendientes de toolchain pasan a resueltos en el ADR 0012.
+- ADR 0003: nota sobre el tag `latest` de Prisma, que apunta a una release candidate.
+- `convenciones.md`: excepción para los scripts compuestos (`format:check`) y sección de verificación automática.
+
+### Verificado
+- `pnpm typecheck`, `pnpm lint` y `pnpm format:check` pasan en los cuatro paquetes.
+- Con un export temporal (ya eliminado): la API, la web y el mock resuelven `@creditos/shared`, tsup lo incluye en el bundle, `node dist/server.js` y `tsx` lo ejecutan, y el lint detecta nombres fuera de la convención.
+
 ## [0.1.0] - 2026-09-30 — Repositorio
 
 ### Added

@@ -41,7 +41,7 @@ Se eligió **Prisma** para acceder a los datos desde la API. El problema es que 
 
 - El modelo de datos completo: tablas, llaves, índices, tipos y restricciones.
 - La organización de `database/`: un solo script o varios numerados.
-- La versión de Prisma y el driver o adaptador para SQL Server.
+- La versión de Prisma y el driver o adaptador para SQL Server. Ojo: al 2026-09-30, el tag `latest` de npm apunta a `8.0.0-rc.19` (release candidate); la última estable es la 7.10.0, con `@prisma/adapter-mssql` 7.10.0.
 - La serialización de los valores `DECIMAL` en la API (number o string).
 
 Última actualización: 2026-09-30

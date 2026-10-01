@@ -42,11 +42,8 @@ El frontend es un panel administrativo: dashboard con totales por estado, listad
 
 ## Por definir en la implementación
 
-- Versión de Express (4 o 5).
-- Sistema de módulos de la API (ESM o CommonJS).
 - Router del frontend, librería para consumir la API y manejo de formularios.
-- Linter y formateador.
 
-El logger quedó decidido en el [ADR 0010](0010-logs-tecnicos-y-auditoria.md) y los parámetros visuales en el [ADR 0011](0011-diseno-visual-ui-ux-pro-max.md).
+El logger quedó decidido en el [ADR 0010](0010-logs-tecnicos-y-auditoria.md), los parámetros visuales en el [ADR 0011](0011-diseno-visual-ui-ux-pro-max.md), y Express 5, ESM, el linter y el formateador en el [ADR 0012](0012-toolchain-del-monorepo.md).
 
 Última actualización: 2026-09-30

@@ -34,6 +34,13 @@ Va en camelCase:
 | Paquetes del workspace | Minúsculas con scope | `@creditos/api`, `@creditos/web`, `@creditos/shared` | npm no admite mayúsculas en los nombres de paquete |
 | Documentación (`docs/`) | kebab-case | `decisions/0001-monorepo-pnpm-workspaces.md` | Lo fija el formato OKF |
 | Repositorio en GitHub | kebab-case | `modulo-creditos` | Convención de nombres de repositorio en GitHub |
+| Scripts compuestos de `package.json` | Con dos puntos | `format:check`, `dev:worker` | Convención de npm para agrupar variantes de un script |
+
+## Verificación automática
+
+- **El lint hace cumplir la convención en los identificadores** con `@typescript-eslint/naming-convention` (ver `eslint.config.js`): camelCase en variables, funciones y parámetros; PascalCase en tipos, interfaces y clases; PascalCase permitido en funciones y variables de archivos `.tsx` (componentes React). Las propiedades admiten camelCase o UPPER_CASE (variables de entorno, valores del enunciado), y las que necesitan comillas (`'X-Request-Id'`) quedan libres.
+- **Los nombres de archivo no se verifican con lint**, porque los de shadcn/ui son kebab-case. Se revisan a mano.
+- **El formato lo aplica Prettier**: comillas simples, punto y coma, trailing commas y 100 columnas. `docs/` queda fuera.
 
 ## Git
 
@@ -44,9 +51,5 @@ Va en camelCase:
 
 - **Una palabra por segmento.** Las rutas se diseñan para que no haga falta ningún separador; por ejemplo: `/api/creditos/{id}/estado`, `/api/auth/refresh`.
 - Los query params van en camelCase.
-
-## Por definir
-
-- El linter y el formateador, y sus reglas.
 
 Última actualización: 2026-09-30
