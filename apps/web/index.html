@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Módulo de Créditos: solicitudes de crédito de los asociados"
+    />
+    <title>Módulo de Créditos</title>
+    <!-- Aplica el tema guardado (o el del sistema) antes de pintar, para que no parpadee. -->
+    <script>
+      (function () {
+        var tema = null;
+        try {
+          tema = localStorage.getItem('tema');
+        } catch (e) {}
+        var oscuro =
+          tema === 'dark' ||
+          (tema !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', oscuro);
+        document.documentElement.style.colorScheme = oscuro ? 'dark' : 'light';
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="raiz"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

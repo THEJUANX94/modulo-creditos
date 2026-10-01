@@ -13,3 +13,6 @@ allowBuilds:
   '@prisma/engines': true
   # Telemetría de instalación que trae swagger-ui-dist: denegada a propósito, no la necesita.
   '@scarf/scarf': false
+
+minimumReleaseAgeExclude:
+  - vite@8.3.2

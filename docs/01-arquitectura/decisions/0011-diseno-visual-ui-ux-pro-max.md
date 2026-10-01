@@ -60,12 +60,13 @@ La skill trae un generador (`--design-system`) y un modo para persistir el resul
 
 ## Por definir en la implementación
 
-- Los colores de los estados del crédito (badges) en ambos modos, siempre acompañados de texto (`color-not-only`).
-- El mapeo a las variables CSS de shadcn/ui (ver la nota sobre `accent` en [design-system.md](../../05-frontend/design-system.md)).
-- La escala tipográfica (tamaños de títulos y texto secundario).
-- El valor exacto de la sombra de los elementos flotantes.
-- Si las fuentes se cargan desde Google Fonts o se sirven desde el propio proyecto.
-- Los gráficos del dashboard: tipo de gráfico y librería.
-- Los breakpoints y el comportamiento en pantallas pequeñas.
+Resuelto en el [ADR 0021](0021-frontend.md) y en la sección 10 de [design-system.md](../../05-frontend/design-system.md):
 
-Última actualización: 2026-09-30
+- los badges de estado: tono suave e icono por estado, con 6.15:1 a 12.30:1;
+- el mapeo a shadcn/ui: `--accent` es el hover neutro y el dorado va en `--dorado`; el borde de los campos pasa a `#64748B` para cumplir 3:1;
+- la escala de Tailwind (12 a 30 px) y la `shadow-md` solo en lo flotante;
+- IBM Plex Sans servida desde el proyecto;
+- barras horizontales con Recharts, más una tabla accesible;
+- los breakpoints de Tailwind, con tarjetas y menú lateral bajo 768 px.
+
+Última actualización: 2026-10-01

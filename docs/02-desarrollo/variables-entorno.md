@@ -7,7 +7,7 @@ tags: [config, variables-entorno, secretos]
 
 Cada componente tiene su `.env` (que git ignora) y su `.env.example` (versionado, sin secretos reales). Para empezar, se copia el `.env.example` a `.env` y se reemplazan las claves.
 
-> *Parcial.* Faltan las variables de la web (paso 7).
+> La web no tiene variables de entorno: llama a la API por el mismo origen (`/api`), con el proxy de Vite en desarrollo y el de Nginx en Docker ([ADR 0021](../01-arquitectura/decisions/0021-frontend.md)).
 
 ## docker-compose — `.env` de la raíz
 

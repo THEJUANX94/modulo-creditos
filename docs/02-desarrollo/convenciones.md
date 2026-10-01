@@ -60,9 +60,17 @@ Va en camelCase:
 - **Las rutas protegidas usan `autenticar()` y `autorizar(accion)`**, con una acción de la matriz de `@creditos/shared`.
 - **En los `*Repository.ts`, las claves de objeto pueden ir en PascalCase**: son los campos de relación de Prisma, que llevan el nombre de su tabla (`select: { Usuarios: … }`). El lint lo permite solo en esos archivos.
 
+## Frontend
+
+- **Las páginas van en `src/paginas/` y los componentes propios en `src/components/`**, en PascalCase. Los de shadcn/ui, en `src/components/ui/`, son código de terceros: kebab-case, sin las reglas con tipos del lint, y se ajustan a mano solo donde contradicen el design system.
+- **Los imports internos usan el alias `@/`** (`@/lib/api`), que exige el CLI de shadcn.
+- **Las reglas, los permisos y las transiciones salen de `@creditos/shared`**: el frontend no repite ninguna.
+- **Las llamadas a la API pasan por `lib/api.ts`** y se consumen con los hooks de `lib/consultas.ts`. Ningún componente llama a `fetch`.
+- **Los colores se usan por token** (`bg-estado-aprobado-fondo`, `text-dorado`), nunca con un hexadecimal en un componente.
+
 ## Pruebas
 
-- **Viven en `tests/` de cada paquete**, nunca en `src/`: `packages/shared/tests/`, `apps/api/tests/unitarias/` y `apps/api/tests/integracion/`. Los archivos terminan en `.test.ts`, y las piezas comunes van en `tests/integracion/apoyo/`.
+- **Viven en `tests/` de cada paquete**, nunca en `src/`: `packages/shared/tests/`, `apps/api/tests/unitarias/`, `apps/api/tests/integracion/` y `apps/web/tests/`. Los archivos terminan en `.test.ts`, y las piezas comunes van en `tests/integracion/apoyo/`.
 - **Los nombres de las pruebas describen la regla en español**, con el resultado esperado: `'RECHAZADO → DESEMBOLSADO, el ejemplo del enunciado → 409 TRANSICION_INVALIDA'`.
 - **Las respuestas se leen con `exito(res, esquema)`, `lista(res, esquema)` y `fallo(res)`**, que las validan con los esquemas Zod de `@creditos/shared`: una prueba también falla si la respuesta se aparta del contrato de Swagger.
 - **Nada se limpia entre pruebas**, porque las tablas de auditoría son inmutables. Cada prueba usa sus propios datos (`identificacionAleatoria()`), y los totales se comparan como diferencias.

@@ -94,6 +94,12 @@ describe('crear crédito', () => {
     ).toBe(false);
   });
 
+  it('el formato de la identificación se informa aunque falten otros campos', () => {
+    expect(campos(esquemaCrearCredito.safeParse({ identificacionAsociado: '10A20' }))).toContain(
+      'identificacionAsociado',
+    );
+  });
+
   it('con pasaporte admite letras y números', () => {
     expect(
       esquemaCrearCredito.safeParse({

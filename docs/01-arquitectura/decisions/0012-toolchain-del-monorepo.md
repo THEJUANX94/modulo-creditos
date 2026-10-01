@@ -79,7 +79,7 @@ Durante el scaffold se verificó con un export temporal en `shared`, eliminado d
 
 ## Por definir en la implementación
 
-- Las reglas de lint específicas de React (hooks), al crear la web.
+Resuelto en el [ADR 0021](0021-frontend.md): las reglas de hooks de React (`eslint-plugin-react-hooks`, `recommended-latest`) en `apps/web`, y los componentes de `components/ui/` (copiados por el CLI de shadcn) sin las reglas con tipos ni la convención de nombres.
 
 Resuelto en el [ADR 0019](0019-implementacion-de-las-pruebas.md): Vitest 5 con un proyecto por paquete, declarados en el `vitest.config.ts` de la raíz, y la API partida en unitarias e integración.
 

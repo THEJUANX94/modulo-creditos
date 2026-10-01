@@ -38,13 +38,13 @@ Parte de las garantías del sistema no está en el código TypeScript: está en 
 
 ## Por definir en la implementación
 
-- Si el frontend tiene pruebas automatizadas (paso 7).
-
 Resuelto en el [ADR 0019](0019-implementacion-de-las-pruebas.md):
 
 - **La BD de pruebas**: `ModuloCreditosPruebas`, recreada en cada corrida por el `dbInit` del compose con los mismos scripts.
 - **La limpieza**: no se limpian datos, porque las tablas de auditoría son inmutables. Cada prueba usa datos únicos y los archivos corren en serie.
 - **La cobertura**: un reporte sin umbral.
 - **CI**: se documenta con el despliegue (paso 9).
+
+Resuelto en el [ADR 0021](0021-frontend.md): el frontend tiene pruebas unitarias de lo crítico (cliente HTTP, acciones por rol y estado, formatos y formularios), con Testing Library sobre jsdom, en el proyecto `web` de la misma suite.
 
 Última actualización: 2026-10-01

@@ -69,7 +69,7 @@ Fuente: decisión propia, derivada de la paleta clara con dos reglas de la skill
 
 ### Nota para la implementación: dos significados de "accent"
 
-En la skill, **Accent** es un color de realce (el dorado). En shadcn/ui, la variable `--accent` es el **fondo de hover** de menús y listas. Si se asigna el dorado a `--accent`, todos los hovers de shadcn se vuelven dorados. El mapeo a las variables de shadcn/ui queda por definir.
+En la skill, **Accent** es un color de realce (el dorado). En shadcn/ui, la variable `--accent` es el **fondo de hover** de menús y listas. Si se asigna el dorado a `--accent`, todos los hovers de shadcn se vuelven dorados. Por eso `--accent` de shadcn toma el gris suave (el hover neutro), y el dorado va en una variable propia, `--dorado` (sección 10).
 
 ## 3. Tipografía
 
@@ -148,14 +148,69 @@ Son reglas de la skill que se aplican en todas las pantallas. El identificador e
 | `confirmation-dialogs` | Confirmar antes de una acción destructiva | Borrado lógico, rechazo y cancelación de un crédito |
 | `destructive-emphasis` | Las acciones destructivas usan el color de peligro y están separadas de las principales | Botones de eliminar, rechazar y cancelar |
 
-## Por definir
+## 10. Decisiones de la implementación
 
-- Los colores de los estados del crédito (badges) en ambos modos.
-- El mapeo de estos tokens a las variables CSS de shadcn/ui.
-- La escala tipográfica (tamaños de títulos y texto secundario).
-- El valor exacto de la sombra de los elementos flotantes.
-- La carga de las fuentes: Google Fonts o servidas desde el propio proyecto.
-- Los gráficos del dashboard.
-- Los breakpoints.
+Se tomaron en el paso 7 ([ADR 0021](../01-arquitectura/decisions/0021-frontend.md)). Los valores están en `apps/web/src/index.css`.
 
-Última actualización: 2026-09-30
+### Estados del crédito
+
+Tono suave por estado, siempre con texto e icono de Lucide (regla `color-not-only`). Contraste del texto sobre su fondo, medido con la fórmula de WCAG 2.x:
+
+| Estado | Icono | Claro (fondo / texto) | Contraste | Oscuro (fondo / texto) | Contraste |
+|---|---|---|---|---|---|
+| Solicitado | FileText | `#F1F5F9` / `#334155` | 9.45:1 | `#1E293B` / `#CBD5E1` | 9.85:1 |
+| En estudio | Search | `#DBEAFE` / `#1E3A8A` | 8.49:1 | `#172554` / `#BFDBFE` | 10.34:1 |
+| Aprobado | CircleCheck | `#FEF3C7` / `#854D0E` | 6.15:1 | `#422006` / `#FDE68A` | 11.70:1 |
+| Desembolsado | Banknote | `#DCFCE7` / `#166534` | 6.49:1 | `#052E16` / `#BBF7D0` | 12.30:1 |
+| Rechazado | CircleX | `#FEE2E2` / `#991B1B` | 6.80:1 | `#450A0A` / `#FECACA` | 11.16:1 |
+| Cancelado | Ban | Solo borde: `#FFFFFF` / `#475569` | 7.58:1 | Solo borde: `#0F172A` / `#94A3B8` | 6.96:1 |
+
+Los mismos tonos marcan la notificación del webhook: Entregado en verde, Pendiente en azul y Fallido en rojo.
+
+### Variables de shadcn/ui
+
+| Variable de shadcn | Toma | Nota |
+|---|---|---|
+| `--background`, `--foreground`, `--card`, `--popover` | Background, Foreground y Card | — |
+| `--primary`, `--secondary` | Primary y Secondary | — |
+| `--muted`, `--muted-foreground` | Muted | — |
+| `--accent` | **Muted** (`#E8ECF1` / `#1E293B`) | Es el hover de menús y listas: no puede ser el dorado |
+| `--destructive` | Destructive | Se agrega `--destructive-foreground` para el botón sólido |
+| `--border` | Border | — |
+| `--input` | **`#64748B`** | El borde de un campo necesita 3:1 para que se vea (WCAG 1.4.11): 4.76:1 sobre la card en claro, 3.75:1 en oscuro |
+| `--ring` | Ring | Opacidad completa; el preset de shadcn la traía al 50 % |
+| `--dorado` (propia) | Accent de la skill | Solo realces: el icono de la marca, el monto total del dashboard y el estado Aprobado |
+| `--enlace` (propia) | `#1E3A8A` / `#93C5FD` | Enlaces dentro de tablas y textos; 10.36:1 y 9.90:1 sobre la card |
+
+### Tamaños de los controles
+
+- **Botones y campos de 40 px de alto, y 44 px en pantallas táctiles** (`pointer-coarse`), por el área táctil que pide la skill. El preset de shadcn traía 32 px.
+- **El botón de peligro es sólido**: blanco sobre `#DC2626` (4.83:1) en claro y `#020617` sobre `#EF4444` (5.36:1) en oscuro. El preset traía un fondo translúcido con texto rojo, por debajo de 4.5:1.
+
+### Escala tipográfica
+
+La de Tailwind. Pesos 400, 500 y 600.
+
+| Uso | Tamaño | Clase |
+|---|---|---|
+| Etiquetas auxiliares (solo ahí) | 12 px | `text-xs` |
+| Texto secundario y celdas | 14 px | `text-sm` |
+| Texto base | 16 px | `text-base` |
+| Subtítulos | 18 y 20 px | `text-lg`, `text-xl` |
+| Título de cada página | 24 px | `text-2xl` |
+| Cifras del dashboard | 30 px | `text-3xl` |
+
+### Sombra, fuentes, gráficos y breakpoints
+
+- **Sombra**: solo en lo flotante (menús, diálogos y toasts), la `shadow-md` de Tailwind. Las superficies se separan con borde.
+- **Fuentes**: IBM Plex Sans desde el propio proyecto (`@fontsource/ibm-plex-sans`, licencia OFL), solo con los pesos 400, 500 y 600. Sin peticiones a Google.
+- **Dashboard**: barras horizontales (Recharts, vía el Chart de shadcn), como recomienda la skill para comparar categorías.
+  - Van en el orden del flujo, no ordenadas por valor: los estados son un proceso.
+  - Cada barra lleva su valor escrito; una barra en cero conserva 3 px para que se vea su etiqueta.
+  - Debajo va la misma información en una tabla, que es la alternativa accesible.
+- **Breakpoints**: los de Tailwind, mobile-first (640, 768, 1024 y 1280 px).
+  - Bajo 768 px, la barra superior pasa a un panel lateral y el listado a tarjetas, sin scroll horizontal en la página.
+  - El contenido se limita a 1280 px de ancho.
+- **Formatos**: montos en pesos colombianos (`$ 15.000.000`, con centavos solo si existen) y fechas en hora de Colombia, con el mes en letras (`1 de oct de 2026`).
+
+Última actualización: 2026-10-01

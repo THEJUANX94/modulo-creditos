@@ -5,7 +5,7 @@ tags: [arquitectura, express, react, sql-server, webhook]
 
 # Arquitectura
 
-> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0020. Faltan el diagrama de arquitectura y la propuesta de despliegue.
+> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0021. Faltan el diagrama de arquitectura y la propuesta de despliegue.
 
 ## 1. Contexto
 
@@ -15,7 +15,7 @@ Una entidad del sector financiero solidario administra las solicitudes de crédi
 
 | Componente | Tecnología | Rol | Estado |
 |---|---|---|---|
-| Frontend | React + Vite, servido por Nginx | Panel administrativo: dashboard, listado, creación y detalle | Sin estado (archivos estáticos) |
+| Frontend | React + Vite, servido por Nginx | Panel administrativo: dashboard, listado, creación y detalle, y para ADMIN usuarios y la traza del webhook. Llama a la API por el mismo origen (`/api`) ([ADR 0021](decisions/0021-frontend.md)) | Sin estado (archivos estáticos); el access token vive solo en memoria |
 | API | Express + TypeScript (`server.ts`) | API REST, autenticación, validación y reglas de negocio | Sin estado; todo se guarda en la BD |
 | Worker | El mismo código de la API (`worker.ts`), con su propia configuración | Envía los eventos del outbox al sistema externo, firmados y con reintentos. Escala horizontalmente: la BD reparte los eventos | Sin estado; los eventos y su traza están en la BD |
 | SQL Server | SQL Server | Créditos, historial, usuarios, outbox y traza del webhook | **Con estado** |

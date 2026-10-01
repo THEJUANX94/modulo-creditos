@@ -1,0 +1,192 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+
+/* Tema del Módulo de Créditos: docs/05-frontend/design-system.md (ADR 0011, ADR 0021).
+   Los valores son los de la paleta "Banking/Traditional Finance" de ui-ux-pro-max, con el contraste
+   medido. El modo oscuro va con la clase .dark (lib/tema.tsx). */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Propios del proyecto: el dorado de la marca (no es el --accent de shadcn, que es el hover) y
+     los estados del crédito, siempre con texto e icono (regla color-not-only). */
+  --color-dorado: var(--dorado);
+  --color-enlace: var(--enlace);
+  --color-estado-solicitado: var(--estado-solicitado);
+  --color-estado-solicitado-fondo: var(--estado-solicitado-fondo);
+  --color-estado-en-estudio: var(--estado-en-estudio);
+  --color-estado-en-estudio-fondo: var(--estado-en-estudio-fondo);
+  --color-estado-aprobado: var(--estado-aprobado);
+  --color-estado-aprobado-fondo: var(--estado-aprobado-fondo);
+  --color-estado-desembolsado: var(--estado-desembolsado);
+  --color-estado-desembolsado-fondo: var(--estado-desembolsado-fondo);
+  --color-estado-rechazado: var(--estado-rechazado);
+  --color-estado-rechazado-fondo: var(--estado-rechazado-fondo);
+  --color-estado-cancelado: var(--estado-cancelado);
+  --color-estado-cancelado-fondo: var(--estado-cancelado-fondo);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Radios del design system: 8 px botones e inputs, 12 px cards, 16 px modales. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 16px;
+  --radius-4xl: 9999px;
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #020617;
+  --card: #ffffff;
+  --card-foreground: #020617;
+  --popover: #ffffff;
+  --popover-foreground: #020617;
+  --primary: #0f172a;
+  --primary-foreground: #ffffff;
+  --secondary: #1e3a8a;
+  --secondary-foreground: #ffffff;
+  --muted: #e8ecf1;
+  --muted-foreground: #475569;
+  /* En shadcn, --accent es el fondo de hover de menús y listas: gris suave, no el dorado. */
+  --accent: #e8ecf1;
+  --accent-foreground: #020617;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  /* El borde de los campos necesita 3:1 para que se vean (WCAG 1.4.11): 4.76:1 sobre la card. */
+  --input: #64748b;
+  --ring: #0f172a;
+  --radius: 8px;
+
+  --dorado: #a16207;
+  --enlace: #1e3a8a;
+
+  --estado-solicitado: #334155;
+  --estado-solicitado-fondo: #f1f5f9;
+  --estado-en-estudio: #1e3a8a;
+  --estado-en-estudio-fondo: #dbeafe;
+  --estado-aprobado: #854d0e;
+  --estado-aprobado-fondo: #fef3c7;
+  --estado-desembolsado: #166534;
+  --estado-desembolsado-fondo: #dcfce7;
+  --estado-rechazado: #991b1b;
+  --estado-rechazado-fondo: #fee2e2;
+  --estado-cancelado: #475569;
+  --estado-cancelado-fondo: #ffffff;
+
+  --chart-1: #1e3a8a;
+  --chart-2: #a16207;
+  --chart-3: #166534;
+  --chart-4: #991b1b;
+  --chart-5: #475569;
+}
+
+.dark {
+  --background: #020617;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
+  --primary: #e2e8f0;
+  --primary-foreground: #0f172a;
+  --secondary: #1e40af;
+  --secondary-foreground: #ffffff;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  --destructive: #ef4444;
+  --destructive-foreground: #020617;
+  --border: #334155;
+  --input: #64748b;
+  --ring: #e2e8f0;
+
+  --dorado: #ca8a04;
+  --enlace: #93c5fd;
+
+  --estado-solicitado: #cbd5e1;
+  --estado-solicitado-fondo: #1e293b;
+  --estado-en-estudio: #bfdbfe;
+  --estado-en-estudio-fondo: #172554;
+  --estado-aprobado: #fde68a;
+  --estado-aprobado-fondo: #422006;
+  --estado-desembolsado: #bbf7d0;
+  --estado-desembolsado-fondo: #052e16;
+  --estado-rechazado: #fecaca;
+  --estado-rechazado-fondo: #450a0a;
+  --estado-cancelado: #94a3b8;
+  --estado-cancelado-fondo: #0f172a;
+
+  --chart-1: #93c5fd;
+  --chart-2: #ca8a04;
+  --chart-3: #4ade80;
+  --chart-4: #f87171;
+  --chart-5: #94a3b8;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  /* Cifras tabulares en montos y tablas (regla number-tabular). */
+  .tabular-nums,
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Foco siempre visible: anillo de 3 px del color Ring (regla focus-states). */
+  :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

@@ -5,6 +5,52 @@ tags: [modulo-creditos, changelog]
 
 # Bitácora de cambios — Módulo de Créditos
 
+## [0.1.0] - 2026-10-01 — Paso 7: frontend
+
+La interfaz web completa, con el sistema visual de la skill ui-ux-pro-max aplicado. Decisiones en el [ADR 0021](01-arquitectura/decisions/0021-frontend.md).
+
+### Added
+- `apps/web`: React 19, Vite 8, Tailwind 4, shadcn/ui (preset Nova, sobre Radix), React Router 8, TanStack Query y Table v9, React Hook Form, Recharts y Sonner. Mismo origen que la API, con el proxy de Vite.
+- Pantallas:
+  - login y cambio de la contraseña temporal;
+  - dashboard: tarjetas, barras por estado y tabla accesible;
+  - listado con los filtros en la URL, tabla en escritorio y tarjetas en móvil;
+  - crear crédito;
+  - detalle con acciones, historial y notificación del webhook;
+  - para ADMIN, usuarios y la traza del webhook.
+- Cliente HTTP con refresh ante un 401 (compartido entre peticiones), salida por `SESION_INVALIDA` y validación de cada respuesta con los esquemas de `shared`.
+- Tema claro, oscuro o del sistema (`lib/tema.tsx`), aplicado antes de pintar.
+- 25 pruebas unitarias (proyecto `web` de Vitest, con Testing Library sobre jsdom), sumadas a `pnpm test`.
+- `design-system.md`, sección 10: los badges de estado con su contraste, el mapeo a shadcn, la escala, la sombra, las fuentes, el gráfico, los breakpoints y los formatos.
+
+### Changed
+- `shared`: la regla "con CC o NIT, solo dígitos" corre con `when` aunque otros campos fallen, para que el formulario la muestre al salir del campo.
+- Componentes de shadcn:
+  - botones y campos de 40 px, y 44 px en pantallas táctiles;
+  - anillo de foco con opacidad completa;
+  - botón de peligro sólido;
+  - borde de los campos con 3:1;
+  - "Close" pasa a "Cerrar".
+- `next-themes` se reemplaza por un proveedor propio: React 19 rechaza el `<script>` que inyecta.
+- `eslint.config.js`: las reglas de hooks de React en la web, y `components/ui/` tratado como código de terceros.
+- ADR 0002, 0008, 0011 y 0012: sus pendientes del frontend pasan a resueltos en el ADR 0021. `architecture.md`, `setup-local.md`, `variables-entorno.md`, `convenciones.md` y `troubleshooting.md`: la web.
+
+### Fixed
+- El formulario de crédito mostraba el error de formato de la identificación solo cuando todo lo demás estaba bien: Zod saltaba la regla del objeto mientras otro campo fallara. Lo encontró una prueba del formulario.
+
+### Verificado
+- `pnpm test`: 233 de 233. Typecheck, lint, formato y build de producción limpios. La carga inicial es de 324 kB (103 kB gzip), con cada pantalla en su propio archivo.
+- Recorrido en el navegador contra la API, el worker y el mock reales:
+  - login y sesión recuperada en otra pestaña;
+  - el dashboard, y el listado filtrado desde la URL;
+  - la creación con el monto exacto;
+  - la notificación, que pasó sola de Pendiente a Entregado;
+  - un cambio de estado confirmado, y el 403 de los cuatro ojos en un toast;
+  - los usuarios y la traza.
+
+### Pendiente
+- La revisión visual completa en claro, oscuro y móvil: las capturas fallaron con la ventana de Claude minimizada.
+
 ## [0.1.0] - 2026-10-01 — Paso 6: mock del sistema externo
 
 El receptor del webhook que simula el sistema externo, para mostrar en vivo cada respuesta posible. Decisiones en el [ADR 0020](01-arquitectura/decisions/0020-mock-del-sistema-externo.md).

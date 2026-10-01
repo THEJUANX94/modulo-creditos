@@ -1,6 +1,7 @@
 import eslint from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import prettier from 'eslint-config-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 // Convención de nombres de docs/02-desarrollo/convenciones.md.
@@ -64,6 +65,11 @@ export default defineConfig(
     },
   },
   {
+    // Reglas de los hooks de React (ADR 0012, pendiente resuelto en el ADR 0021).
+    files: ['apps/web/**/*.{ts,tsx}'],
+    extends: [reactHooks.configs.flat['recommended-latest']],
+  },
+  {
     // Los componentes React van en PascalCase.
     files: ['**/*.tsx'],
     rules: {
@@ -73,6 +79,13 @@ export default defineConfig(
         { selector: ['function', 'variable'], format: ['camelCase', 'PascalCase'] },
       ],
     },
+  },
+  {
+    // Los componentes de shadcn/ui son código de terceros copiado por su CLI (ADR 0002): se ajustan a
+    // mano solo donde contradicen el design system, y no se les exige la convención del proyecto.
+    files: ['apps/web/src/components/ui/**'],
+    extends: [tseslint.configs.disableTypeChecked],
+    rules: { '@typescript-eslint/naming-convention': 'off' },
   },
   {
     files: ['**/*.js'],

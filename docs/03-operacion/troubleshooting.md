@@ -121,6 +121,16 @@ El receptor tiene que tener el mismo secreto. Con `NODE_ENV=production`, además
 
 **Solución.** Cerrar ese proceso. En Windows, `netstat -ano | findstr :4100` muestra su PID.
 
+## La consola del navegador muestra un 401 de `/api/auth/refresh` al abrir la web
+
+**No es un error.** Al cargar, la web intenta recuperar la sesión con la cookie del refresh ([ADR 0021](../01-arquitectura/decisions/0021-frontend.md)). Si no hay sesión, la API responde 401 y la web muestra el login. El navegador registra toda respuesta 4xx en la consola.
+
+## La web en desarrollo no refleja un cambio, o falla con un error que ya se corrigió
+
+**Causa.** El observador de archivos de Vite no vio el cambio y siguió sirviendo la versión anterior. Pasa sobre todo con el proyecto dentro de una carpeta sincronizada (OneDrive, Dropbox).
+
+**Solución.** Detener `pnpm -F @creditos/web dev` y volver a levantarlo con la caché limpia: `pnpm -F @creditos/web dev --force`.
+
 ## Prisma inserta `N'PENDIENTE'` literal, o no genera `create` para `Creditos`
 
 **Causa.** Son limitaciones de la introspección de Prisma 7 con SQL Server: no soporta `ROWVERSION`, trata las columnas calculadas como campos normales y lee los `DEFAULT (N'...')` como texto literal.

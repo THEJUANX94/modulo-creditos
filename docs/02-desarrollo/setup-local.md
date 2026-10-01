@@ -5,7 +5,7 @@ tags: [setup, desarrollo, pnpm, node, docker]
 
 # Configurar el entorno de desarrollo local
 
-> **Parcial.** Cubre el workspace, la base de datos, la API, el worker, el mock del sistema externo y las pruebas. La web se agrega en su paso.
+> Cubre el workspace, la base de datos, la API, el worker, el mock del sistema externo, la web y las pruebas. El sistema completo con un solo `docker compose` llega en el paso 8.
 
 ## Requisitos
 
@@ -74,6 +74,14 @@ En Windows no basta con el cambio automático de versión de pnpm. Ver [troubles
    ```
 
    La traza se consulta como ADMIN en `GET /api/webhooks/eventos`. Sin el mock arriba, cada evento queda en `ERROR_RED` y, tras los reintentos, en `FALLIDO`.
+
+8. **Web**, en otra terminal:
+
+   ```bash
+   pnpm -F @creditos/web dev
+   ```
+
+   Abrir **http://localhost:5173** y entrar con un usuario demo. Vite reenvía `/api` a la API (`localhost:3000`): la web y la API comparten origen, así que la cookie del refresh funciona sin CORS ([ADR 0021](../01-arquitectura/decisions/0021-frontend.md)).
 
 pnpm bloquea los scripts de instalación de las dependencias que no están en `allowBuilds` (`pnpm-workspace.yaml`). Si agregas una dependencia que los necesita, la instalación falla con `ERR_PNPM_IGNORED_BUILDS`: agrégala a `allowBuilds` y vuelve a instalar.
 
@@ -159,7 +167,7 @@ Se ejecutan con `pnpm -F <paquete> <script>`, por ejemplo `pnpm -F @creditos/api
 | Paquete | Scripts |
 |---|---|
 | `@creditos/api` | `dev` (API con recarga), `dev:worker` (worker con recarga), `build` (bundle con tsup en `dist/`), `start`, `start:worker`, `typecheck`, `prisma:pull`, `prisma:generate`, `usuarios:crear` |
-| `@creditos/web` | `typecheck` |
+| `@creditos/web` | `dev` (Vite con recarga), `build` (typecheck + build de producción en `dist/`), `preview`, `typecheck` |
 | `@creditos/webhook-mock` | `dev` (mock con recarga), `build` (bundle con tsup), `start`, `typecheck` |
 | `@creditos/shared` | `typecheck` |
 

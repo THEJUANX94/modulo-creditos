@@ -42,8 +42,8 @@ El frontend es un panel administrativo: dashboard con totales por estado, listad
 
 ## Por definir en la implementación
 
-- Router del frontend, librería para consumir la API y manejo de formularios.
+Resuelto en el [ADR 0021](0021-frontend.md): React Router 8, TanStack Query para consumir la API y React Hook Form con los esquemas Zod de `shared`. La web llama a la API por el mismo origen (`/api`), con un proxy de Vite en desarrollo y de Nginx en Docker.
 
 El logger quedó decidido en el [ADR 0010](0010-logs-tecnicos-y-auditoria.md), los parámetros visuales en el [ADR 0011](0011-diseno-visual-ui-ux-pro-max.md), y Express 5, ESM, el linter y el formateador en el [ADR 0012](0012-toolchain-del-monorepo.md).
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

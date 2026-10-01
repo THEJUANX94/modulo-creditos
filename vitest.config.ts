@@ -8,12 +8,17 @@ export default defineConfig({
       'packages/shared/vitest.config.ts',
       'apps/api/vitest.unitarias.config.ts',
       'apps/api/vitest.integracion.config.ts',
+      'apps/web/vitest.config.ts',
     ],
     // En modo proyectos, la cobertura es global: se configura aquí. Reporte sin umbral.
     coverage: {
       provider: 'v8',
-      include: ['packages/shared/src/**/*.ts', 'apps/api/src/**/*.ts'],
-      exclude: ['apps/api/src/generated/**'],
+      include: [
+        'packages/shared/src/**/*.ts',
+        'apps/api/src/**/*.ts',
+        'apps/web/src/**/*.{ts,tsx}',
+      ],
+      exclude: ['apps/api/src/generated/**', 'apps/web/src/components/ui/**'],
       reporter: ['text-summary', 'html'],
     },
   },

@@ -107,20 +107,25 @@ export const esquemaVersion = z
 // Formato de la identificación por tipo, igual que CK_Asociados_identificacion.
 const tiposSoloDigitos = ['CC', 'NIT'];
 
+const camposIdentificacion = {
+  tipoIdentificacionAsociado: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .default('CC')
+    .meta({ description: 'Código de TiposIdentificacion', example: 'CC' }),
+  identificacionAsociado: z
+    .string({ error: 'La identificación es obligatoria' })
+    .trim()
+    .min(3, 'La identificación debe tener al menos 3 caracteres')
+    .max(20, 'La identificación puede tener como máximo 20 caracteres')
+    .meta({ example: '1001234567' }),
+};
+const esquemaIdentificacion = z.object(camposIdentificacion);
+
 export const esquemaCrearCredito = z
   .object({
-    tipoIdentificacionAsociado: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .default('CC')
-      .meta({ description: 'Código de TiposIdentificacion', example: 'CC' }),
-    identificacionAsociado: z
-      .string({ error: 'La identificación es obligatoria' })
-      .trim()
-      .min(3, 'La identificación debe tener al menos 3 caracteres')
-      .max(20, 'La identificación puede tener como máximo 20 caracteres')
-      .meta({ example: '1001234567' }),
+    ...camposIdentificacion,
     // Se recortan los extremos y se colapsan los espacios internos antes de guardar y comparar.
     nombreAsociado: z
       .string({ error: 'El nombre del asociado es obligatorio' })
@@ -138,19 +143,24 @@ export const esquemaCrearCredito = z
     numeroCuotas: esquemaNumeroCuotas,
     formaPago: esquemaFormaPago,
   })
-  .superRefine((datos, ctx) => {
-    const soloDigitos = tiposSoloDigitos.includes(datos.tipoIdentificacionAsociado);
-    const formato = soloDigitos ? /^\d+$/ : /^[0-9A-Za-z]+$/;
-    if (!formato.test(datos.identificacionAsociado)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['identificacionAsociado'],
-        message: soloDigitos
-          ? `Con tipo ${datos.tipoIdentificacionAsociado} la identificación solo admite dígitos`
-          : 'La identificación solo admite letras y números',
-      });
-    }
-  })
+  .superRefine(
+    (datos, ctx) => {
+      const soloDigitos = tiposSoloDigitos.includes(datos.tipoIdentificacionAsociado);
+      const formato = soloDigitos ? /^\d+$/ : /^[0-9A-Za-z]+$/;
+      if (!formato.test(datos.identificacionAsociado)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['identificacionAsociado'],
+          message: soloDigitos
+            ? `Con tipo ${datos.tipoIdentificacionAsociado} la identificación solo admite dígitos`
+            : 'La identificación solo admite letras y números',
+        });
+      }
+      // Corre aunque otros campos fallen: así el formulario muestra este error al salir del campo,
+      // y no solo cuando todo lo demás está bien.
+    },
+    { when: (carga) => esquemaIdentificacion.safeParse(carga.value).success },
+  )
   .meta({ id: 'CrearCredito' });
 
 // ───────────── Editar ─────────────
