@@ -5,6 +5,22 @@ tags: [modulo-creditos, changelog]
 
 # Bitácora de cambios — Módulo de Créditos
 
+## [0.1.0] - 2026-10-01 — Paso 9: README, diagramas y propuesta de despliegue
+
+Los entregables finales del enunciado (secciones 15 y 16). Decisiones en el [ADR 0023](01-arquitectura/decisions/0023-entregables-finales-readme-diagrama-y-despliegue.md).
+
+### Added
+- `README.md` de la raíz: qué es, el arranque con Docker, los usuarios demo, un recorrido de 5 minutos, las pruebas, el mapa de cada entregable a su ubicación, la estructura y el stack.
+- Diagramas Mermaid en `architecture.md`: los componentes (con lo stateless y lo que conserva estado) y la secuencia de creación de un crédito con el webhook.
+- `deploy.md`, la propuesta de despliegue: topología de producción con su diagrama, stateless y con estado, HTTPS por tramo, variables y secretos con su rotación, backup y recuperación (un mecanismo por tipo de falla, contrastado con la documentación de Microsoft), logs, health checks, monitoreo con OpenTelemetry y Grafana con sus alertas, CI/CD con un workflow de GitHub Actions y Dependabot de referencia, del compose a producción, y las brechas conocidas.
+
+### Changed
+- `architecture.md`, el índice y el resumen de decisiones: sin sus marcas de pendiente.
+- ADR 0008, 0009 y 0019: el CI queda documentado en `deploy.md`; la respuesta de escalabilidad no se documenta, por decisión del autor.
+
+### Notes
+- El workflow de GitHub Actions y la propuesta para Azure no se ejecutaron. Los diagramas se validaron renderizándolos, y los bloques YAML, parseándolos.
+
 ## [0.1.0] - 2026-10-01 — Paso 8: docker-compose del sistema completo
 
 `docker compose up` levanta todo el sistema, con Nginx como única entrada. Decisiones en el [ADR 0022](01-arquitectura/decisions/0022-docker-compose-y-empaquetado.md).

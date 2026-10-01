@@ -43,7 +43,7 @@ Resuelto en el [ADR 0019](0019-implementacion-de-las-pruebas.md):
 - **La BD de pruebas**: `ModuloCreditosPruebas`, recreada en cada corrida por el `dbInit` del compose con los mismos scripts.
 - **La limpieza**: no se limpian datos, porque las tablas de auditoría son inmutables. Cada prueba usa datos únicos y los archivos corren en serie.
 - **La cobertura**: un reporte sin umbral.
-- **CI**: se documenta con el despliegue (paso 9).
+- **CI**: se documenta con el despliegue, sin crear el workflow: el pipeline de referencia está en [deploy.md](../../03-operacion/deploy.md#cicd) ([ADR 0023](0023-entregables-finales-readme-diagrama-y-despliegue.md)).
 
 Resuelto en el [ADR 0021](0021-frontend.md): el frontend tiene pruebas unitarias de lo crítico (cliente HTTP, acciones por rol y estado, formatos y formularios), con Testing Library sobre jsdom, en el proyecto `web` de la misma suite.
 

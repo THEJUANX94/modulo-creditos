@@ -81,7 +81,7 @@ Las verificaciones de punta a punta de los pasos 4b a 4d (scripts sueltos contra
 ### Cobertura y CI
 
 - **`pnpm test:coverage` genera un reporte** (v8; texto y HTML en `coverage/`), **sin umbral**. Un porcentaje global premia probar lo fácil; la suite se defiende por las reglas que cubre (tabla anterior).
-- **CI**: se documenta en la propuesta de despliegue (paso 9), no se configura ahora.
+- **CI**: se documenta en la propuesta de despliegue, no se configura: el workflow de referencia, que corre estas mismas pruebas con un SQL Server de servicio, está en [deploy.md](../../03-operacion/deploy.md#cicd) ([ADR 0023](0023-entregables-finales-readme-diagrama-y-despliegue.md)).
 
 ## Hallazgo: el reclamo bloqueaba de más
 

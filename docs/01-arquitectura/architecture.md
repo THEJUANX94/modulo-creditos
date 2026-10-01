@@ -5,7 +5,7 @@ tags: [arquitectura, express, react, sql-server, webhook]
 
 # Arquitectura
 
-> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0022. Faltan el diagrama de arquitectura y la propuesta de despliegue.
+> Describe los componentes y la estructura decididos en los ADR 0001 a 0023. La propuesta de despliegue productivo está en [deploy.md](../03-operacion/deploy.md).
 
 ## 1. Contexto
 
@@ -24,6 +24,68 @@ Una entidad del sector financiero solidario administra las solicitudes de crédi
 Decisiones relacionadas: [ADR 0001](decisions/0001-monorepo-pnpm-workspaces.md) (repositorio y docker-compose), [ADR 0002](decisions/0002-express-typescript-react-vite.md) (stack), [ADR 0006](decisions/0006-webhook-outbox-transaccional.md) (worker y mock) y [ADR 0018](decisions/0018-webhook-entrega-firma-y-traza.md) (entrega, firma y traza).
 
 **En Docker** ([ADR 0022](decisions/0022-docker-compose-y-empaquetado.md)), Nginx es la única entrada: sirve la web y reenvía `/api` a la API, con las cabeceras de seguridad y la CSP. La API, el worker y SQL Server quedan en la red interna (SQL Server se publica solo para herramientas de desarrollo). La API y el worker usan la misma imagen con otro comando, y un servicio de una sola vez crea la BD y otro los usuarios demo.
+
+### Diagrama de componentes
+
+Lo que levanta `docker compose up` ([ADR 0022](decisions/0022-docker-compose-y-empaquetado.md)). Los componentes **sin estado** se pueden reiniciar o replicar sin perder nada; **solo SQL Server guarda estado**.
+
+```mermaid
+flowchart LR
+  usuario(["Usuario<br/>(navegador)"])
+  externo(["Sistema externo<br/>receptor del webhook"])
+
+  subgraph compose ["docker compose"]
+    web["<b>web</b><br/>Nginx + build de React<br/>sin estado"]
+    api["<b>api</b><br/>Express + TypeScript<br/>sin estado"]
+    worker["<b>worker</b><br/>mismo código de la API<br/>sin estado"]
+    mock["<b>webhookMock</b><br/>simula al sistema externo<br/>solo en desarrollo"]
+    bd[("<b>SQL Server</b><br/>CON ESTADO<br/>créditos, auditoría,<br/>sesiones y outbox")]
+  end
+
+  usuario -->|"HTTP :8080"| web
+  web -->|"/api (proxy)"| api
+  api -->|"una transacción:<br/>crédito + historial + evento PENDIENTE"| bd
+  worker -->|"reclama eventos<br/>y registra los intentos"| bd
+  worker -->|"POST firmado<br/>(Standard Webhooks)"| mock
+  worker -.->|"en producción"| externo
+
+  classDef sinEstado fill:#dbeafe,stroke:#1e3a8a,color:#0f172a
+  classDef conEstado fill:#fef3c7,stroke:#854d0e,color:#0f172a
+  classDef externoClase fill:#f1f5f9,stroke:#475569,color:#0f172a
+  class web,api,worker sinEstado
+  class bd conEstado
+  class mock,externo,usuario externoClase
+```
+
+### Diagrama de la creación de un crédito
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor U as Asesor
+  participant A as API
+  participant B as SQL Server
+  participant K as Worker
+  participant E as Sistema externo
+
+  U->>A: POST /api/creditos (por Nginx, con el access token)
+  A->>A: Valida con Zod y aplica las reglas de negocio
+  A->>B: Una transacción: crédito + historial + evento PENDIENTE
+  A-->>U: 201, sin esperar al sistema externo
+  Note over K,B: Cada 2 s
+  K->>B: Reclama los eventos vencidos (UPDATE con lease de 60 s)
+  K->>E: POST credito.creado firmado (webhook-id, webhook-signature)
+  alt Responde 2xx
+    E-->>K: 200
+    K->>B: Intento EXITOSO y evento ENTREGADO
+  else Timeout, error de red, 408, 429 o 5xx
+    K->>B: Intento fallido y evento reprogramado con backoff (hasta 6 intentos)
+  else Otro 3xx o 4xx
+    K->>B: Evento FALLIDO de inmediato
+  end
+```
+
+El mismo requestId viaja de la petición al evento y al log del worker (sección 4).
 
 ## 3. Estructura del repositorio
 
@@ -54,9 +116,8 @@ Decisión completa en el [ADR 0010](decisions/0010-logs-tecnicos-y-auditoria.md)
 - El modelo de datos, con su diagrama entidad-relación, está en [modelo-datos.md](modelo-datos.md) ([ADR 0013](decisions/0013-modelo-de-datos.md)).
 - La máquina de estados y las demás reglas de negocio están en el [ADR 0014](decisions/0014-reglas-de-negocio.md).
 
-## Pendiente
+## Despliegue
 
-- Diagrama de arquitectura en [diagrams/](diagrams/).
-- Propuesta de despliegue productivo y respuesta de escalabilidad.
+Cómo se expondría en producción (HTTPS, secretos, backup, logs, health checks, monitoreo y CI/CD), con su diagrama y qué componentes son stateless y cuáles conservan estado: [deploy.md](../03-operacion/deploy.md).
 
 Última actualización: 2026-10-01

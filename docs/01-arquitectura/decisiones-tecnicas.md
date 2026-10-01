@@ -31,13 +31,8 @@ Las decisiones que dan forma al Módulo de Créditos, en una línea cada una. Ca
 | 20 | Mock del sistema externo con `node:http`: verifica la firma con la librería oficial de Standard Webhooks, valida el contrato, deduplica con 200 y tiene seis modos de falla que se cambian en vivo desde una página | Cada respuesta posible del sistema externo se muestra en la demo, y queda probado que un receptor cualquiera verifica nuestras firmas | [0020](decisions/0020-mock-del-sistema-externo.md) |
 | 21 | Frontend: mismo origen que la API, React Router con los filtros en la URL, TanStack Query, formularios con los esquemas de `shared`, sesión recuperada con el refresh, solo las acciones válidas por estado y rol, barra superior, y el design system aplicado con sus pendientes resueltos | El frontend no repite ninguna regla, cada error dice la causa y su código de soporte, y la interfaz cumple el contraste y el área táctil medidos | [0021](decisions/0021-frontend.md) |
 | 22 | Docker: un Dockerfile con targets y versiones exactas, `docker compose up` levanta el sistema completo, Nginx como única entrada con CSP estricta, secretos en un `.env` generado con claves aleatorias, contenedores de solo lectura sin privilegios, healthchecks (con latido en el worker) y logs rotados | Quien evalúa levanta todo con dos comandos y sin escribir secretos, y se prueba tal como se desplegaría: mismo origen, IP real del cliente, apagado ordenado verificado | [0022](decisions/0022-docker-compose-y-empaquetado.md) |
+| 23 | Entregables finales: README corto como puerta de entrada, diagramas en Mermaid dentro de los documentos, y una propuesta de despliegue neutral con Azure de referencia (Managed Instance, OpenTelemetry con Grafana, GitHub Actions) que dice qué se verificó y qué no | Cada requisito de la sección 16 tiene su respuesta con su alternativa y su costo, y la propuesta no promete lo que el código no hace | [0023](decisions/0023-entregables-finales-readme-diagrama-y-despliegue.md) |
 
 El idioma del código y las convenciones de nombrado están en [convenciones.md](../02-desarrollo/convenciones.md). Los parámetros visuales completos están en [design-system.md](../05-frontend/design-system.md). El diccionario de datos está en [modelo-datos.md](modelo-datos.md).
-
-## Pendiente de documentar
-
-Se agrega a este resumen cuando se decida:
-
-- Propuesta de despliegue productivo y respuesta de escalabilidad.
 
 Última actualización: 2026-10-01

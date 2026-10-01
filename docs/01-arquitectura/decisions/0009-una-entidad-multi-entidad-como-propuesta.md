@@ -35,6 +35,6 @@ El sistema se implementa para **una sola entidad**. La ruta hacia multi-entidad 
 
 ## Por definir en la implementación
 
-- La respuesta de escalabilidad completa (documento pendiente).
+Resuelto en el [ADR 0023](0023-entregables-finales-readme-diagrama-y-despliegue.md): la respuesta de escalabilidad completa **no se documenta** en el repositorio, por decisión del 2026-10-01. Las tres piezas de la sección "Decisión" quedan como punto de partida.
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01
