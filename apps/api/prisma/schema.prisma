@@ -1,0 +1,159 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "sqlserver"
+}
+
+model Asociados {
+  id                  String              @id(clustered: false, map: "PK_Asociados") @default(dbgenerated("newid()"), map: "DF_Asociados_id") @db.UniqueIdentifier
+  consecutivo         Int                 @unique(map: "UX_Asociados_consecutivo", clustered: true) @default(autoincrement())
+  tipoIdentificacion  String              @default("N'CC'", map: "DF_Asociados_tipoIdentificacion") @db.NVarChar(10)
+  identificacion      String              @db.NVarChar(20)
+  nombre              String              @db.NVarChar(150)
+  fechaCreacion       DateTime            @default(dbgenerated("sysutcdatetime()"), map: "DF_Asociados_fechaCreacion")
+  TiposIdentificacion TiposIdentificacion @relation(fields: [tipoIdentificacion], references: [codigo], onUpdate: NoAction, map: "FK_Asociados_tipoIdentificacion")
+  Creditos            Creditos[]
+
+  @@unique([identificacion, tipoIdentificacion], map: "UX_Asociados_identificacion")
+}
+
+model CambiosCredito {
+  id            BigInt   @id(map: "PK_CambiosCredito") @default(autoincrement())
+  operacionId   String   @db.UniqueIdentifier
+  creditoId     String   @db.UniqueIdentifier
+  campo         String   @db.NVarChar(50)
+  valorAnterior String?  @db.NVarChar(200)
+  valorNuevo    String?  @db.NVarChar(200)
+  motivo        String?  @db.NVarChar(500)
+  usuarioId     String   @db.UniqueIdentifier
+  requestId     String?  @db.NVarChar(100)
+  fecha         DateTime @default(dbgenerated("sysutcdatetime()"), map: "DF_CambiosCredito_fecha")
+  Creditos      Creditos @relation(fields: [creditoId], references: [id], onUpdate: NoAction, map: "FK_CambiosCredito_creditoId")
+  Usuarios      Usuarios @relation(fields: [usuarioId], references: [id], onUpdate: NoAction, map: "FK_CambiosCredito_usuarioId")
+
+  @@index([creditoId, fecha], map: "IX_CambiosCredito_creditoId_fecha")
+}
+
+model Creditos {
+  id                   String                   @id(clustered: false, map: "PK_Creditos") @default(dbgenerated("newid()"), map: "DF_Creditos_id") @db.UniqueIdentifier
+  consecutivo          Int                      @unique(map: "UX_Creditos_consecutivo", clustered: true) @default(autoincrement())
+  numeroCredito        String                   @unique(map: "UX_Creditos_numeroCredito") @db.NVarChar(20)
+  asociadoId           String                   @db.UniqueIdentifier
+  tipoCredito          String                   @db.NVarChar(30)
+  valorSolicitado      Decimal                  @db.Decimal(18, 2)
+  tasaInteres          Decimal                  @db.Decimal(6, 4)
+  numeroCuotas         Int                      @db.SmallInt
+  formaPago            String                   @db.NVarChar(30)
+  estado               String                   @default("N'SOLICITADO'", map: "DF_Creditos_estado") @db.NVarChar(20)
+  fechaSolicitud       DateTime                 @default(dbgenerated("sysutcdatetime()"), map: "DF_Creditos_fechaSolicitud")
+  fechaActualizacion   DateTime                 @default(dbgenerated("sysutcdatetime()"), map: "DF_Creditos_fechaActualizacion")
+  fechaEliminacion     DateTime?
+  usuarioEliminacionId String?                  @db.UniqueIdentifier
+  version              Unsupported("timestamp")
+  CambiosCredito       CambiosCredito[]
+  Asociados            Asociados                @relation(fields: [asociadoId], references: [id], onUpdate: NoAction, map: "FK_Creditos_asociadoId")
+  FormasPago           FormasPago               @relation(fields: [formaPago], references: [codigo], onUpdate: NoAction, map: "FK_Creditos_formaPago")
+  TiposCredito         TiposCredito             @relation(fields: [tipoCredito], references: [codigo], onUpdate: NoAction, map: "FK_Creditos_tipoCredito")
+  Usuarios             Usuarios?                @relation(fields: [usuarioEliminacionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Creditos_usuarioEliminacionId")
+  HistorialCredito     HistorialCredito[]
+  WebhookEventos       WebhookEventos[]
+
+  @@unique([asociadoId, tipoCredito], map: "UX_Creditos_enCurso", where: raw("(([estado] IN (N'SOLICITADO', N'EN_ESTUDIO', N'APROBADO')) AND [fechaEliminacion] IS NULL)"))
+  @@index([asociadoId], map: "IX_Creditos_asociadoId")
+  @@index([estado, fechaSolicitud(sort: Desc)], map: "IX_Creditos_estado_fechaSolicitud", where: raw("([fechaEliminacion] IS NULL)"))
+  @@index([fechaSolicitud(sort: Desc)], map: "IX_Creditos_fechaSolicitud", where: raw("([fechaEliminacion] IS NULL)"))
+}
+
+model FormasPago {
+  codigo   String     @id(map: "PK_FormasPago") @db.NVarChar(30)
+  nombre   String     @db.NVarChar(100)
+  activo   Boolean    @default(true, map: "DF_FormasPago_activo")
+  Creditos Creditos[]
+}
+
+model HistorialCredito {
+  id             BigInt   @id(map: "PK_HistorialCredito") @default(autoincrement())
+  creditoId      String   @db.UniqueIdentifier
+  estadoAnterior String?  @db.NVarChar(20)
+  estadoNuevo    String   @db.NVarChar(20)
+  observacion    String?  @db.NVarChar(500)
+  usuarioId      String   @db.UniqueIdentifier
+  requestId      String?  @db.NVarChar(100)
+  fecha          DateTime @default(dbgenerated("sysutcdatetime()"), map: "DF_HistorialCredito_fecha")
+  Creditos       Creditos @relation(fields: [creditoId], references: [id], onUpdate: NoAction, map: "FK_HistorialCredito_creditoId")
+  Usuarios       Usuarios @relation(fields: [usuarioId], references: [id], onUpdate: NoAction, map: "FK_HistorialCredito_usuarioId")
+
+  @@index([creditoId, fecha], map: "IX_HistorialCredito_creditoId_fecha")
+}
+
+model Roles {
+  codigo   String     @id(map: "PK_Roles") @db.NVarChar(20)
+  nombre   String     @db.NVarChar(100)
+  Usuarios Usuarios[]
+}
+
+model TiposCredito {
+  codigo   String     @id(map: "PK_TiposCredito") @db.NVarChar(30)
+  nombre   String     @db.NVarChar(100)
+  activo   Boolean    @default(true, map: "DF_TiposCredito_activo")
+  Creditos Creditos[]
+}
+
+model TiposIdentificacion {
+  codigo    String      @id(map: "PK_TiposIdentificacion") @db.NVarChar(10)
+  nombre    String      @db.NVarChar(100)
+  activo    Boolean     @default(true, map: "DF_TiposIdentificacion_activo")
+  Asociados Asociados[]
+}
+
+model Usuarios {
+  id                 String             @id(clustered: false, map: "PK_Usuarios") @default(dbgenerated("newid()"), map: "DF_Usuarios_id") @db.UniqueIdentifier
+  consecutivo        Int                @unique(map: "UX_Usuarios_consecutivo", clustered: true) @default(autoincrement())
+  correo             String             @unique(map: "UX_Usuarios_correo") @db.NVarChar(254)
+  nombre             String             @db.NVarChar(150)
+  hashContrasena     String             @db.NVarChar(255)
+  rol                String             @db.NVarChar(20)
+  activo             Boolean            @default(true, map: "DF_Usuarios_activo")
+  fechaCreacion      DateTime           @default(dbgenerated("sysutcdatetime()"), map: "DF_Usuarios_fechaCreacion")
+  fechaActualizacion DateTime           @default(dbgenerated("sysutcdatetime()"), map: "DF_Usuarios_fechaActualizacion")
+  CambiosCredito     CambiosCredito[]
+  Creditos           Creditos[]
+  HistorialCredito   HistorialCredito[]
+  Roles              Roles              @relation(fields: [rol], references: [codigo], onUpdate: NoAction, map: "FK_Usuarios_rol")
+}
+
+model WebhookEventos {
+  id              BigInt            @id(map: "PK_WebhookEventos") @default(autoincrement())
+  eventId         String            @unique(map: "UX_WebhookEventos_eventId") @db.UniqueIdentifier
+  tipoEvento      String            @db.NVarChar(50)
+  creditoId       String            @db.UniqueIdentifier
+  payload         String            @db.NVarChar(Max)
+  estado          String            @default("N'PENDIENTE'", map: "DF_WebhookEventos_estado") @db.NVarChar(20)
+  intentos        Int               @default(0, map: "DF_WebhookEventos_intentos") @db.SmallInt
+  proximoIntento  DateTime          @default(dbgenerated("sysutcdatetime()"), map: "DF_WebhookEventos_proximoIntento")
+  requestId       String?           @db.NVarChar(100)
+  fechaCreacion   DateTime          @default(dbgenerated("sysutcdatetime()"), map: "DF_WebhookEventos_fechaCreacion")
+  fechaEntrega    DateTime?
+  Creditos        Creditos          @relation(fields: [creditoId], references: [id], onUpdate: NoAction, map: "FK_WebhookEventos_creditoId")
+  WebhookIntentos WebhookIntentos[]
+
+  @@index([proximoIntento], map: "IX_WebhookEventos_pendientes", where: raw("([estado]=N'PENDIENTE')"))
+}
+
+model WebhookIntentos {
+  id             BigInt         @id(map: "PK_WebhookIntentos") @default(autoincrement())
+  eventoId       BigInt
+  numeroIntento  Int            @db.SmallInt
+  resultado      String         @db.NVarChar(20)
+  statusHttp     Int?           @db.SmallInt
+  duracionMs     Int?
+  error          String?
+  fecha          DateTime       @default(dbgenerated("sysutcdatetime()"), map: "DF_WebhookIntentos_fecha")
+  WebhookEventos WebhookEventos @relation(fields: [eventoId], references: [id], onUpdate: NoAction, map: "FK_WebhookIntentos_eventoId")
+
+  @@unique([eventoId, numeroIntento], map: "UX_WebhookIntentos_evento_numero")
+}

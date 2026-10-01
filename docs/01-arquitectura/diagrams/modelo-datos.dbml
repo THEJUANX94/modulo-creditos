@@ -1,0 +1,164 @@
+Project ModuloCreditos {
+  database_type: 'SQLServer'
+  Note: '''
+  Módulo de Créditos — SQL Server 2022, collation Modern_Spanish_CI_AI, esquema dbo.
+  Fechas en DATETIME2(3) UTC. Texto en NVARCHAR.
+  Usuarios, Asociados y Creditos: id UUID público (PK NONCLUSTERED) + consecutivo INT IDENTITY (UNIQUE CLUSTERED).
+  Tablas inmutables (DENY UPDATE al login de la app + triggers INSTEAD OF UPDATE, DELETE): HistorialCredito, CambiosCredito, WebhookIntentos.
+  El login de la app no tiene DELETE en ninguna tabla: todo borrado es lógico. Todas las FK con NO ACTION.
+  '''
+}
+
+// ───────────── Catálogos ─────────────
+
+Table TiposIdentificacion {
+  codigo nvarchar(10) [pk, note: 'CC, CE, PA, PPT, NIT']
+  nombre nvarchar(100) [not null]
+  activo bit [not null, default: 1, note: 'Retira un valor sin borrarlo']
+}
+
+Table TiposCredito {
+  codigo nvarchar(30) [pk, note: 'LIBRE_INVERSION, EDUCATIVO, VIVIENDA, VEHICULO, CALAMIDAD_DOMESTICA, ROTATIVO, COMPRA_CARTERA, EMPRENDIMIENTO']
+  nombre nvarchar(100) [not null]
+  activo bit [not null, default: 1]
+}
+
+Table FormasPago {
+  codigo nvarchar(30) [pk, note: 'NOMINA, CAJA, DEBITO_AUTOMATICO, PSE']
+  nombre nvarchar(100) [not null]
+  activo bit [not null, default: 1]
+}
+
+Table Roles {
+  codigo nvarchar(20) [pk, note: 'ASESOR, ANALISTA, TESORERIA, ADMIN']
+  nombre nvarchar(100) [not null]
+}
+
+// ───────────── Entidades ─────────────
+
+Table Usuarios {
+  id uniqueidentifier [pk, default: `NEWID()`, note: 'PK NONCLUSTERED · id público']
+  consecutivo int [increment, unique, not null, note: 'UNIQUE CLUSTERED · orden físico']
+  correo nvarchar(254) [unique, not null, note: 'Login']
+  nombre nvarchar(150) [not null]
+  hashContrasena nvarchar(255) [not null, note: 'Algoritmo: paso 4']
+  rol nvarchar(20) [not null, ref: > Roles.codigo]
+  activo bit [not null, default: 1]
+  fechaCreacion datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+  fechaActualizacion datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+}
+
+Table Asociados {
+  id uniqueidentifier [pk, default: `NEWID()`, note: 'PK NONCLUSTERED · id público']
+  consecutivo int [increment, unique, not null, note: 'UNIQUE CLUSTERED']
+  tipoIdentificacion nvarchar(10) [not null, default: 'CC', ref: > TiposIdentificacion.codigo]
+  identificacion nvarchar(20) [not null, note: 'CHECK por tipo: CC y NIT solo dígitos (NIT sin dígito de verificación); CE, PA y PPT alfanumérico. Mínimo 3 caracteres']
+  nombre nvarchar(150) [not null]
+  fechaCreacion datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+
+  indexes {
+    (identificacion, tipoIdentificacion) [unique, name: 'UX_Asociados_identificacion', note: 'Unicidad real (tipo + número). El filtro por identificación usa este índice']
+  }
+}
+
+Table Creditos {
+  id uniqueidentifier [pk, default: `NEWID()`, note: 'PK NONCLUSTERED · id de la API y del webhook']
+  consecutivo int [increment, unique, not null, note: 'UNIQUE CLUSTERED · orden físico, origen de numeroCredito']
+  numeroCredito nvarchar(20) [unique, not null, note: 'Columna calculada PERSISTED: CR-{año de fechaSolicitud en hora Colombia}-{consecutivo con 6 dígitos}']
+  asociadoId uniqueidentifier [not null, ref: > Asociados.id]
+  tipoCredito nvarchar(30) [not null, ref: > TiposCredito.codigo]
+  valorSolicitado decimal(18,2) [not null, note: 'CHECK > 0']
+  tasaInteres decimal(6,4) [not null, note: '% mensual · CHECK entre 0 y 100']
+  numeroCuotas smallint [not null, note: 'CHECK entre 1 y 360']
+  formaPago nvarchar(30) [not null, ref: > FormasPago.codigo]
+  estado nvarchar(20) [not null, default: 'SOLICITADO', note: 'CHECK: SOLICITADO, EN_ESTUDIO, APROBADO, RECHAZADO, DESEMBOLSADO, CANCELADO']
+  fechaSolicitud datetime2(3) [not null, default: `SYSUTCDATETIME()`, note: 'La pone el servidor; inmutable']
+  fechaActualizacion datetime2(3) [not null, default: `SYSUTCDATETIME()`, note: 'La actualiza el service en cada UPDATE']
+  fechaEliminacion datetime2(3) [null, note: 'Borrado lógico (solo en SOLICITADO)']
+  usuarioEliminacionId uniqueidentifier [null, ref: > Usuarios.id, note: 'CHECK: fechaEliminacion y usuarioEliminacionId van juntos']
+  version rowversion [not null, note: 'Concurrencia optimista → 409 CREDITO_MODIFICADO']
+
+  indexes {
+    (asociadoId, tipoCredito) [unique, name: 'UX_Creditos_enCurso', note: 'Filtrado: WHERE estado IN (SOLICITADO, EN_ESTUDIO, APROBADO) AND fechaEliminacion IS NULL → regla de duplicados']
+    (estado, fechaSolicitud) [name: 'IX_Creditos_estado_fechaSolicitud', note: 'fechaSolicitud DESC · WHERE fechaEliminacion IS NULL → listado filtrado por estado']
+    fechaSolicitud [name: 'IX_Creditos_fechaSolicitud', note: 'DESC · WHERE fechaEliminacion IS NULL → listado por defecto']
+    asociadoId [name: 'IX_Creditos_asociadoId']
+  }
+}
+
+// ───────────── Auditoría ─────────────
+
+Table HistorialCredito {
+  id bigint [pk, increment]
+  creditoId uniqueidentifier [not null, ref: > Creditos.id]
+  estadoAnterior nvarchar(20) [null, note: 'NULL solo en la creación (NULL → SOLICITADO)']
+  estadoNuevo nvarchar(20) [not null]
+  observacion nvarchar(500) [null, note: 'CHECK: obligatoria si estadoNuevo es RECHAZADO o CANCELADO']
+  usuarioId uniqueidentifier [not null, ref: > Usuarios.id]
+  requestId nvarchar(100) [null]
+  fecha datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+
+  Note: 'INMUTABLE · cambios de estado'
+
+  indexes {
+    (creditoId, fecha) [name: 'IX_HistorialCredito_creditoId_fecha']
+  }
+}
+
+Table CambiosCredito {
+  id bigint [pk, increment]
+  operacionId uniqueidentifier [not null, note: 'Agrupa los campos de una misma edición']
+  creditoId uniqueidentifier [not null, ref: > Creditos.id]
+  campo nvarchar(50) [not null, note: 'CHECK: tipoCredito, valorSolicitado, tasaInteres, numeroCuotas, formaPago, fechaEliminacion']
+  valorAnterior nvarchar(200) [null]
+  valorNuevo nvarchar(200) [null]
+  motivo nvarchar(500) [null, note: 'CHECK: obligatorio si campo = fechaEliminacion']
+  usuarioId uniqueidentifier [not null, ref: > Usuarios.id]
+  requestId nvarchar(100) [null]
+  fecha datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+
+  Note: 'INMUTABLE · cambios de datos y borrado lógico'
+
+  indexes {
+    (creditoId, fecha) [name: 'IX_CambiosCredito_creditoId_fecha']
+  }
+}
+
+// ───────────── Webhook (outbox) ─────────────
+
+Table WebhookEventos {
+  id bigint [pk, increment]
+  eventId uniqueidentifier [unique, not null, note: 'Lo genera la API: va dentro del payload']
+  tipoEvento nvarchar(50) [not null, note: "CHECK: 'credito.creado'"]
+  creditoId uniqueidentifier [not null, ref: > Creditos.id]
+  payload nvarchar(max) [not null, note: 'Snapshot del cuerpo a enviar · CHECK ISJSON']
+  estado nvarchar(20) [not null, default: 'PENDIENTE', note: 'CHECK: PENDIENTE, ENTREGADO, FALLIDO']
+  intentos smallint [not null, default: 0]
+  proximoIntento datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+  requestId nvarchar(100) [null, note: 'Petición que creó el crédito (ADR 0010)']
+  fechaCreacion datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+  fechaEntrega datetime2(3) [null]
+
+  Note: 'Outbox transaccional (ADR 0006). Se inserta en la misma transacción que el crédito'
+
+  indexes {
+    proximoIntento [name: 'IX_WebhookEventos_pendientes', note: "Filtrado: WHERE estado = 'PENDIENTE' → lectura del worker"]
+  }
+}
+
+Table WebhookIntentos {
+  id bigint [pk, increment]
+  eventoId bigint [not null, ref: > WebhookEventos.id]
+  numeroIntento smallint [not null]
+  resultado nvarchar(20) [not null, note: 'CHECK: EXITOSO, ERROR_HTTP, TIMEOUT, ERROR_RED']
+  statusHttp smallint [null]
+  duracionMs int [null]
+  error nvarchar(1000) [null]
+  fecha datetime2(3) [not null, default: `SYSUTCDATETIME()`]
+
+  Note: 'INMUTABLE · traza de cada envío'
+
+  indexes {
+    (eventoId, numeroIntento) [unique, name: 'UX_WebhookIntentos_evento_numero']
+  }
+}

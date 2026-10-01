@@ -64,12 +64,13 @@ La entrega es **al menos una vez** (*at-least-once*). Un evento puede llegar dos
 
 ## Por definir en la implementación
 
-- Las tablas del outbox y de los intentos.
 - N (máximo de intentos), la base del backoff y el timeout de cada envío.
 - Qué respuestas se reintentan; por ejemplo, si un 4xx se reintenta o pasa directo a `FALLIDO`.
 - El intervalo de lectura del worker y cómo reclama eventos sin choques entre réplicas.
 - El algoritmo y el header de la firma HMAC.
 - Si existe un reenvío manual de los eventos `FALLIDO`.
-- La configuración del mock receptor y dónde vive en el repositorio.
+- La configuración del mock receptor.
+
+Resuelto: las tablas `WebhookEventos` (outbox) y `WebhookIntentos` (traza inmutable) están en el [ADR 0013](0013-modelo-de-datos.md), y el mock vive en `apps/webhookMock` ([ADR 0012](0012-toolchain-del-monorepo.md)).
 
 Última actualización: 2026-09-30

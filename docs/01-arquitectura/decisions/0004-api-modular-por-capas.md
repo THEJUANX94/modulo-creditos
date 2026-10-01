@@ -64,9 +64,8 @@ Las transiciones permitidas viven en `estadoTransiciones.ts`, aparte del service
 ## Por definir en la implementación
 
 - Qué validaciones viven en los esquemas Zod (forma y rangos) y cuáles en el service (duplicados, transiciones).
-- Si las reglas simples se repiten como `CHECK` en la BD como defensa en profundidad.
-- La regla de duplicados.
-- El mapa de transiciones de estado.
 - El formato de las respuestas exitosas. El de error lo fija el enunciado: `{ "success": false, "error": { "code", "message" } }`.
+
+Resuelto en el [ADR 0014](0014-reglas-de-negocio.md): la regla de duplicados y el mapa de transiciones. Las reglas que se pueden expresar como restricción se repiten en la BD como defensa en profundidad (tabla "Dónde vive cada regla").
 
 Última actualización: 2026-09-30

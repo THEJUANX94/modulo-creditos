@@ -54,7 +54,7 @@ El gestor de paquetes es **pnpm**. La prueba recomienda además un `docker-compo
 
 ## Por definir en la implementación
 
-- Imagen y versión de SQL Server en Docker, y cómo se ejecuta la inicialización de la BD.
+Resuelto en el [ADR 0013](0013-modelo-de-datos.md) y el [ADR 0015](0015-contrato-http-y-base-de-la-api.md): SQL Server 2022, y el compose de infraestructura (`sqlserver` + `dbInit`) existe desde el paso 4. El paso 8 lo completa con el resto de servicios.
 
 Resuelto en el [ADR 0012](0012-toolchain-del-monorepo.md): `shared` se consume desde sus fuentes TypeScript, el mock vive en `apps/webhookMock` (paquete `@creditos/webhook-mock`), Node 24 y pnpm 12.8.1.
 

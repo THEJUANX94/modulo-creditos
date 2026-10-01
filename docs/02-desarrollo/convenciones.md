@@ -35,6 +35,8 @@ Va en camelCase:
 | Documentación (`docs/`) | kebab-case | `decisions/0001-monorepo-pnpm-workspaces.md` | Lo fija el formato OKF |
 | Repositorio en GitHub | kebab-case | `modulo-creditos` | Convención de nombres de repositorio en GitHub |
 | Scripts compuestos de `package.json` | Con dos puntos | `format:check`, `dev:worker` | Convención de npm para agrupar variantes de un script |
+| Restricciones, índices y triggers SQL | `PREFIJO_Tabla_columnaORegla` | `PK_Creditos`, `UX_Creditos_enCurso`, `CK_Creditos_valorSolicitado`, `TR_HistorialCredito_inmutable` | El prefijo dice qué es el objeto (PK, FK, UX, IX, CK, DF, TR) al leer un mensaje de error de la BD |
+| Scripts SQL | `NNN-nombreEnCamelCase.sql` | `002-esquema.sql`, `001-crearBaseDatos.sql` | El número fija el orden de ejecución |
 
 ## Verificación automática
 
@@ -46,6 +48,13 @@ Va en camelCase:
 
 - La rama principal es `main`.
 - `.gitattributes` normaliza los finales de línea a LF. Un script `.sh` o `.sql` con CRLF falla dentro de los contenedores Linux de Docker.
+
+## Módulos de la API
+
+- **Cada capa exporta funciones** y se importa como espacio de nombres: `import * as healthRepository from './healthRepository'` → `healthRepository.verificarConexion()`.
+- **Los errores esperados se lanzan con `AppError`** y un código del catálogo de `@creditos/shared` (`codigosError.ts`). Un código nuevo se agrega ahí, con su status HTTP.
+- **Las respuestas exitosas se envían con `responderExito(res, data, { status, meta })`**, nunca armando el sobre a mano.
+- **Ningún módulo lee `process.env`**: todo sale de `config` (`src/config/config.ts`).
 
 ## Rutas de la API
 

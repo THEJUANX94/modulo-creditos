@@ -5,6 +5,9 @@ packages:
 catalog:
   typescript: ~6.0.3
   '@types/node': ^24.19.0
+  zod: ^4.6.5
 
 allowBuilds:
   esbuild: true
+  prisma: true
+  '@prisma/engines': true

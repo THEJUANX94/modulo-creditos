@@ -77,13 +77,14 @@ Se registra en tablas de la BD que solo admiten inserciones:
 
 ## Por definir en la implementación
 
-- Los niveles de log por entorno y qué se registra en cada nivel.
-- El formato del requestId y su ubicación exacta en el cuerpo de las respuestas de error.
 - Si el requestId también viaja al receptor del webhook (en un header).
-- La estructura de las tablas de auditoría: una genérica o una por tipo. Se define con el modelo de datos.
 - Si la auditoría se escribe en la misma transacción que el cambio que registra.
-- Cómo se garantiza que la auditoría sea inmutable (permisos de la BD, triggers).
 - La retención de los logs técnicos y de la auditoría.
+- La tabla de eventos de seguridad (paso de autenticación).
 - Qué partes de la auditoría expone la API y muestra el frontend (por ejemplo, el historial en el detalle del crédito).
+
+Resuelto en el [ADR 0015](0015-contrato-http-y-base-de-la-api.md): el formato del requestId (el entrante se acepta solo si es seguro; si no, UUID), su ubicación en el cuerpo de error (`requestId` al nivel de `error`), y qué se registra (metadatos por petición, stack solo en los 500, nivel desde `LOG_LEVEL`).
+
+Resuelto en el [ADR 0013](0013-modelo-de-datos.md): la auditoría de cambios queda en dos tablas, `HistorialCredito` (estados) y `CambiosCredito` (datos, agrupados por `operacionId`). Su inmutabilidad tiene dos capas: permisos del login de la app y triggers que bloquean incluso al administrador.
 
 Última actualización: 2026-09-30

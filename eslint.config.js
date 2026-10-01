@@ -21,7 +21,7 @@ const namingConvention = [
 ];
 
 export default defineConfig(
-  { ignores: ['**/dist/', '**/coverage/', 'docs/'] },
+  { ignores: ['**/dist/', '**/coverage/', '**/generated/', 'docs/'] },
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
   {
@@ -36,6 +36,16 @@ export default defineConfig(
     files: ['**/*.ts'],
     rules: {
       '@typescript-eslint/naming-convention': ['error', ...namingConvention],
+    },
+  },
+  {
+    // Express 5 maneja las promesas rechazadas de los handlers async (ADR 0012):
+    // pasar un handler async a router.get() es correcto.
+    rules: {
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { arguments: false } },
+      ],
     },
   },
   {

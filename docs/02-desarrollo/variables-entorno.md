@@ -1,12 +1,38 @@
 ---
 type: reference
-tags: [config, variables-entorno]
+tags: [config, variables-entorno, secretos]
 ---
 
 # Variables de entorno
 
-> *Pendiente.* Se escribe a medida que cada aplicación defina su configuración.
+Cada componente tiene su `.env` (que git ignora) y su `.env.example` (versionado, sin secretos reales). Para empezar, se copia el `.env.example` a `.env` y se reemplazan las claves.
 
-Cubrirá las variables de la API, el worker, el frontend y el mock receptor: para qué sirve cada una, si es obligatoria, su valor por defecto y cuáles son secretos. El archivo `.env.example` de cada aplicación tendrá los mismos nombres, sin secretos reales.
+> *Parcial.* Faltan las variables de autenticación (paso 4b), del worker y del webhook (paso 4d), del mock (paso 6) y de la web (paso 7).
+
+## docker-compose — `.env` de la raíz
+
+| Variable | Obligatoria | Default | Secreto | Para qué |
+|---|---|---|---|---|
+| `MSSQL_SA_PASSWORD` | Sí | — | **Sí** | Clave del administrador (`sa`) de SQL Server. SQL Server exige al menos 8 caracteres con mayúsculas, minúsculas, números y símbolos |
+| `APP_DB_PASSWORD` | Sí | — | **Sí** | Clave del login `appCreditos`, que crea `001-crearBaseDatos.sql`. Tiene que coincidir con la de `DATABASE_URL` en `apps/api/.env` |
+| `SQLSERVER_PORT` | No | `1433` | No | Puerto de SQL Server en la máquina local |
+
+El compose no arranca si falta una variable obligatoria, y dice cuál.
+
+## API — `apps/api/.env`
+
+Las valida `apps/api/src/config/config.ts` al arrancar: si falta una o es inválida, la API no arranca y lista cada problema.
+
+| Variable | Obligatoria | Default | Secreto | Para qué |
+|---|---|---|---|---|
+| `NODE_ENV` | No | `development` | No | `development`, `test` o `production` |
+| `PORT` | No | `3000` | No | Puerto HTTP de la API |
+| `LOG_LEVEL` | No | `info` | No | `fatal`, `error`, `warn`, `info`, `debug`, `trace` o `silent` |
+| `DATABASE_URL` | Sí | — | **Sí** (trae la clave) | Conexión con el login `appCreditos`, de mínimo privilegio. Formato `sqlserver://host:puerto;database=ModuloCreditos;user=appCreditos;password={clave};encrypt=true`. `trustServerCertificate=true` solo en desarrollo |
+| `CORS_ORIGINS` | Sí | — | No | Orígenes del navegador que pueden llamar a la API, separados por coma. Cada uno tiene que ser una URL |
+| `TRUST_PROXY` | No | `0` | No | Cuántos proxies hay delante de la API (Nginx = 1), para que la IP real llegue a la auditoría y al rate limit |
+| `DATABASE_ADMIN_URL` | Solo para `prisma db pull` | — | **Sí** | Conexión de administrador para la introspección. La lee `prisma.config.ts`, no la app. **Nunca en producción** |
+
+La clave va entre llaves (`password={…}`) para que los caracteres especiales no rompan la cadena de conexión.
 
 Última actualización: 2026-09-30

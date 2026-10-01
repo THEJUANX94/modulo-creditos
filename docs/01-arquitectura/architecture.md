@@ -5,7 +5,7 @@ tags: [arquitectura, express, react, sql-server, webhook]
 
 # Arquitectura
 
-> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0011. Faltan el diagrama, el modelo de datos, la máquina de estados del crédito y la propuesta de despliegue.
+> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0014. Faltan el diagrama de arquitectura y la propuesta de despliegue.
 
 ## 1. Contexto
 
@@ -47,11 +47,14 @@ Toda la operación comparte un mismo **requestId**: aparece en los logs de la AP
 
 Decisión completa en el [ADR 0010](decisions/0010-logs-tecnicos-y-auditoria.md).
 
+## 6. Datos y reglas
+
+- El modelo de datos, con su diagrama entidad-relación, está en [modelo-datos.md](modelo-datos.md) ([ADR 0013](decisions/0013-modelo-de-datos.md)).
+- La máquina de estados y las demás reglas de negocio están en el [ADR 0014](decisions/0014-reglas-de-negocio.md).
+
 ## Pendiente
 
 - Diagrama de arquitectura en [diagrams/](diagrams/).
-- Modelo de datos.
-- Máquina de estados del crédito.
 - Propuesta de despliegue productivo y respuesta de escalabilidad.
 
 Última actualización: 2026-09-30

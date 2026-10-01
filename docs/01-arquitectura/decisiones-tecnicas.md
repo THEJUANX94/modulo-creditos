@@ -22,14 +22,17 @@ Las decisiones que dan forma al Módulo de Créditos, en una línea cada una. Ca
 | 11 | Diseño visual guiado por la skill ui-ux-pro-max: estilo Minimalism & Swiss + Accessible, paleta de banca en modo claro y oscuro, IBM Plex Sans | Cada valor visual tiene una fuente rastreable y el contraste está medido antes de escribir código | [0011](decisions/0011-diseno-visual-ui-ux-pro-max.md) |
 | 12 | Toolchain: Node 24 LTS, pnpm 12 con catalogs, TypeScript 6.0 estricto, Express 5, ESM, tsx + tsup, ESLint con reglas con tipos y convención de nombres, Prettier | TypeScript 6.0 es la última versión compatible con el lint con tipos, y `shared` desde las fuentes evita un paso de build | [0012](decisions/0012-toolchain-del-monorepo.md) |
 
-El idioma del código y las convenciones de nombrado están en [convenciones.md](../02-desarrollo/convenciones.md). Los parámetros visuales completos están en [design-system.md](../05-frontend/design-system.md).
+| 13 | Modelo de datos: Asociados aparte con tipo de identificación, catálogos como tablas, UUID público + consecutivo clustered, `numeroCredito` calculado, `DECIMAL(18,2)`, fechas UTC, historial en dos tablas inmutables y login de la app con mínimo privilegio | La BD garantiza las reglas estructurales aunque falle el código, y los ids públicos no se pueden enumerar sin pagar con fragmentación | [0013](decisions/0013-modelo-de-datos.md) |
+| 14 | Reglas de negocio: flujo estricto con rechazo directo, un crédito en curso por asociado y tipo, edición y borrado solo en SOLICITADO, motivo al rechazar, cancelar o borrar, y concurrencia optimista con `ROWVERSION` | Cada regla vive en el service y, si se puede expresar como restricción, también en la BD | [0014](decisions/0014-reglas-de-negocio.md) |
+
+| 15 | Contrato HTTP: sobre `{ success, data, meta }` simétrico al error, errores con `details` y `requestId`, códigos 400/409/422 según el tipo, montos como string. Base: config validada con Zod, health de liveness y readiness, seguridad HTTP, compose de infraestructura | El frontend trata todas las respuestas igual, y cada error se rastrea con su requestId | [0015](decisions/0015-contrato-http-y-base-de-la-api.md) |
+
+El idioma del código y las convenciones de nombrado están en [convenciones.md](../02-desarrollo/convenciones.md). Los parámetros visuales completos están en [design-system.md](../05-frontend/design-system.md). El diccionario de datos está en [modelo-datos.md](modelo-datos.md).
 
 ## Pendiente de documentar
 
-Se agregan a este resumen a medida que se decidan:
+Se agrega a este resumen cuando se decida:
 
-- Modelo de datos: tablas, llaves, índices, tipos, restricciones, fechas y estados.
-- Reglas de negocio: control de duplicados, transiciones de estado permitidas y qué información es inmutable.
 - Propuesta de despliegue productivo y respuesta de escalabilidad.
 
 Última actualización: 2026-09-30
