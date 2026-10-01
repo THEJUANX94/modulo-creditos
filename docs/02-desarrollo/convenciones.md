@@ -54,11 +54,18 @@ Va en camelCase:
 - **Cada capa exporta funciones** y se importa como espacio de nombres: `import * as healthRepository from './healthRepository'` → `healthRepository.verificarConexion()`.
 - **Los errores esperados se lanzan con `AppError`** y un código del catálogo de `@creditos/shared` (`codigosError.ts`). Un código nuevo se agrega ahí, con su status HTTP.
 - **Las respuestas exitosas se envían con `responderExito(res, data, { status, meta })`**, nunca armando el sobre a mano.
-- **Ningún módulo lee `process.env`**: todo sale de `config` (`src/config/config.ts`). Los scripts de una sola vez (`src/scripts/`) leen y validan sus propias variables.
+- **Ningún módulo lee `process.env`**: todo sale de los objetos de `src/config/`. `configBase` tiene lo común; `config`, lo de la API, y `configWorker`, lo del worker, que solo importa el código del worker. Los scripts de una sola vez (`src/scripts/`) leen y validan sus propias variables.
 - **La entrada se valida con `validarEntrada(esquema, datos)`** y un esquema de `@creditos/shared`: devuelve los datos tipados, o lanza 400 `VALIDACION_FALLIDA` con un detalle por campo.
 - **Cada módulo documenta sus rutas en su `*Docs.ts`** (OpenAPI), con los esquemas Zod de `@creditos/shared` y los errores posibles por ruta (`errores(...)`). Las respuestas también tienen esquema Zod, y su tipo se deriva de él.
 - **Las rutas protegidas usan `autenticar()` y `autorizar(accion)`**, con una acción de la matriz de `@creditos/shared`.
 - **En los `*Repository.ts`, las claves de objeto pueden ir en PascalCase**: son los campos de relación de Prisma, que llevan el nombre de su tabla (`select: { Usuarios: … }`). El lint lo permite solo en esos archivos.
+
+## Pruebas
+
+- **Viven en `tests/` de cada paquete**, nunca en `src/`: `packages/shared/tests/`, `apps/api/tests/unitarias/` y `apps/api/tests/integracion/`. Los archivos terminan en `.test.ts`, y las piezas comunes van en `tests/integracion/apoyo/`.
+- **Los nombres de las pruebas describen la regla en español**, con el resultado esperado: `'RECHAZADO → DESEMBOLSADO, el ejemplo del enunciado → 409 TRANSICION_INVALIDA'`.
+- **Las respuestas se leen con `exito(res, esquema)`, `lista(res, esquema)` y `fallo(res)`**, que las validan con los esquemas Zod de `@creditos/shared`: una prueba también falla si la respuesta se aparta del contrato de Swagger.
+- **Nada se limpia entre pruebas**, porque las tablas de auditoría son inmutables. Cada prueba usa sus propios datos (`identificacionAleatoria()`), y los totales se comparan como diferencias.
 
 ## Rutas de la API
 

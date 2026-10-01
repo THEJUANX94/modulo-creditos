@@ -5,7 +5,7 @@ tags: [arquitectura, express, react, sql-server, webhook]
 
 # Arquitectura
 
-> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0014. Faltan el diagrama de arquitectura y la propuesta de despliegue.
+> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0018. Faltan el diagrama de arquitectura y la propuesta de despliegue.
 
 ## 1. Contexto
 
@@ -17,11 +17,11 @@ Una entidad del sector financiero solidario administra las solicitudes de crédi
 |---|---|---|---|
 | Frontend | React + Vite, servido por Nginx | Panel administrativo: dashboard, listado, creación y detalle | Sin estado (archivos estáticos) |
 | API | Express + TypeScript (`server.ts`) | API REST, autenticación, validación y reglas de negocio | Sin estado; todo se guarda en la BD |
-| Worker | El mismo código de la API (`worker.ts`) | Envía los eventos del outbox al sistema externo, con reintentos | Sin estado; los eventos y su traza están en la BD |
+| Worker | El mismo código de la API (`worker.ts`), con su propia configuración | Envía los eventos del outbox al sistema externo, firmados y con reintentos. Escala horizontalmente: la BD reparte los eventos | Sin estado; los eventos y su traza están en la BD |
 | SQL Server | SQL Server | Créditos, historial, usuarios, outbox y traza del webhook | **Con estado** |
 | Mock receptor | *Por definir* | Simula el sistema externo: verifica la firma, deduplica y puede fallar a voluntad | *Por definir* |
 
-Decisiones relacionadas: [ADR 0001](decisions/0001-monorepo-pnpm-workspaces.md) (repositorio y docker-compose), [ADR 0002](decisions/0002-express-typescript-react-vite.md) (stack), [ADR 0006](decisions/0006-webhook-outbox-transaccional.md) (worker y mock).
+Decisiones relacionadas: [ADR 0001](decisions/0001-monorepo-pnpm-workspaces.md) (repositorio y docker-compose), [ADR 0002](decisions/0002-express-typescript-react-vite.md) (stack), [ADR 0006](decisions/0006-webhook-outbox-transaccional.md) (worker y mock) y [ADR 0018](decisions/0018-webhook-entrega-firma-y-traza.md) (entrega, firma y traza).
 
 ## 3. Estructura del repositorio
 
@@ -33,9 +33,9 @@ Ver el árbol del [ADR 0001](decisions/0001-monorepo-pnpm-workspaces.md). La est
 2. La API valida la entrada con el esquema Zod compartido ([ADR 0007](decisions/0007-zod-compartido-openapi-generado.md)) y el service aplica las reglas de negocio ([ADR 0004](decisions/0004-api-modular-por-capas.md)).
 3. En una sola transacción se guardan el crédito y el evento `credito.creado` en estado `PENDIENTE`.
 4. La API responde `201` sin esperar al sistema externo.
-5. El worker toma el evento, lo firma, lo envía y registra el intento. Si el envío falla, lo reprograma con backoff ([ADR 0006](decisions/0006-webhook-outbox-transaccional.md)).
+5. El worker toma el evento (hasta 2 s después), lo firma, lo envía y registra el intento. Si el envío falla por algo temporal, lo reprograma con backoff; si el receptor lo rechaza, o se agotan los intentos, queda `FALLIDO` ([ADR 0006](decisions/0006-webhook-outbox-transaccional.md), [ADR 0018](decisions/0018-webhook-entrega-firma-y-traza.md)).
 
-Toda la operación comparte un mismo **requestId**: aparece en los logs de la API, se guarda con el evento del outbox y vuelve a aparecer en los logs del worker que lo entrega.
+Toda la operación comparte un mismo **requestId**: aparece en los logs de la API, se guarda con el evento del outbox, vuelve a aparecer en los logs del worker que lo entrega y le llega al receptor en `X-Request-Id`.
 
 ## 5. Trazabilidad
 
@@ -57,4 +57,4 @@ Decisión completa en el [ADR 0010](decisions/0010-logs-tecnicos-y-auditoria.md)
 - Diagrama de arquitectura en [diagrams/](diagrams/).
 - Propuesta de despliegue productivo y respuesta de escalabilidad.
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

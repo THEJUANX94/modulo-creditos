@@ -80,6 +80,7 @@ Durante el scaffold se verificó con un export temporal en `shared`, eliminado d
 ## Por definir en la implementación
 
 - Las reglas de lint específicas de React (hooks), al crear la web.
-- La configuración de Vitest (paso de pruebas).
+
+Resuelto en el [ADR 0019](0019-implementacion-de-las-pruebas.md): Vitest 5 con un proyecto por paquete, declarados en el `vitest.config.ts` de la raíz, y la API partida en unitarias e integración.
 
 Última actualización: 2026-10-01

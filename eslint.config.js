@@ -27,7 +27,8 @@ export default defineConfig(
   {
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        // vitest.config.ts de la raíz no pertenece a ningún paquete: usa la configuración por defecto.
+        projectService: { allowDefaultProject: ['vitest.config.ts'] },
         tsconfigRootDir: import.meta.dirname,
       },
     },

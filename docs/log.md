@@ -5,6 +5,65 @@ tags: [modulo-creditos, changelog]
 
 # Bitácora de cambios — Módulo de Créditos
 
+## [0.1.0] - 2026-10-01 — Paso 5: pruebas automatizadas
+
+Las verificaciones de punta a punta de los pasos 4b a 4d pasan a una suite de Vitest contra un SQL Server real. Decisiones en el [ADR 0019](01-arquitectura/decisions/0019-implementacion-de-las-pruebas.md).
+
+### Added
+- Vitest 5 con tres proyectos (`vitest.config.ts` en la raíz): `shared` y `api-unitarias`, sin BD, y `api-integracion`, con Supertest contra la BD real. Scripts `pnpm test` y `pnpm test:coverage` (v8, sin umbral).
+- `database/recrearBdPruebas.sh`: borra y recrea `ModuloCreditosPruebas` con los mismos scripts. Se niega a tocar una BD cuyo nombre no termine en "Pruebas".
+- Setup global de la integración: recrea la BD de pruebas con el `dbInit` del compose y crea un usuario por rol con el script de usuarios demo. La conexión se deriva de `DATABASE_URL`; los secretos son aleatorios en cada corrida.
+- 207 pruebas en 14 archivos:
+  - unitarias de esquemas, máquina de estados, permisos, contrato del evento, política de reintentos y firma (contra el ejemplo publicado de Standard Webhooks);
+  - integración de salud y Swagger, autenticación, usuarios, rate limit, creación, estados, listado, webhook y configuración por proceso.
+- Ayudas de las pruebas que validan cada respuesta con los esquemas Zod de Swagger, y un receptor de webhook temporal que verifica la firma y falla a voluntad.
+- `troubleshooting.md`: `NOMBRE_BD` en sqlcmd, `-I` en sentencias sueltas, Docker apagado y puertos ocupados al correr las pruebas.
+
+### Changed
+- `001`, `002` y `003`: el nombre de la BD llega en `$(NOMBRE_BD)`, y 001 crea el login `appCreditos` solo si no existe. `inicializar.sh` recibe `NOMBRE_BD` (por defecto `ModuloCreditos`) y valida que solo tenga letras y dígitos.
+- `tsconfig.json` de `api` y `shared`: incluyen `tests/` y los archivos de configuración. `eslint.config.js`: el `vitest.config.ts` de la raíz usa el proyecto por defecto.
+- ADR 0008 y 0012: sus pendientes de pruebas pasan a resueltos en el ADR 0019. ADR 0018: la consulta del reclamo y el hallazgo.
+- `setup-local.md`, `convenciones.md` y `variables-entorno.md`: cómo correr las pruebas, sus convenciones y `NOMBRE_BD` en los comandos de sqlcmd.
+
+### Fixed
+- **El reclamo del worker bloqueaba filas que no tomaba.** Con dos workers a la vez, uno se quedaba sin eventos (`[10, 0]`): `UPDLOCK` retiene el bloqueo de cada fila leída, y algunos planes leían todos los pendientes antes del `TOP`. El `TOP` ahora va en una subconsulta que solo lee el índice filtrado. No había envíos duplicados, pero los workers no se repartían el trabajo.
+
+### Verificado
+- `pnpm test`: 207 de 207, dos corridas seguidas, en ~50 s; cobertura del 88,5 % de sentencias y 82 % de ramas.
+- El script de 4d con procesos reales, después de la corrección del reclamo: 51 de 51.
+- La BD de desarrollo no cambia con las corridas.
+
+## [0.1.0] - 2026-10-01 — Paso 4d: webhook
+
+El evento `credito.creado` entra al outbox en la transacción de la creación, y un worker lo envía firmado, con reintentos y traza de cada intento. Decisiones en el [ADR 0018](01-arquitectura/decisions/0018-webhook-entrega-firma-y-traza.md).
+
+### Added
+- `@creditos/shared`:
+  - el contrato del evento (`eventoCreditoCreado.ts`): los campos del enunciado más `tipoIdentificacionAsociado` y `tipoCredito`, con el monto como string;
+  - los estados del evento y los resultados de un intento, los filtros de la traza y sus respuestas;
+  - el código de error `EVENTO_WEBHOOK_NOT_FOUND` (404).
+- `apps/api`, módulo `webhooks`:
+  - `registrarCreditoCreado`, que el caso de uso de creación llama dentro de su transacción;
+  - el despachador del worker: reclamo atómico con `UPDLOCK, READPAST` y lease de 60 s, envío con `fetch`, firma de Standard Webhooks, `X-Request-Id`, timeout y lectura acotada de la respuesta;
+  - la política de reintentos como funciones puras (`politicaReintentos.ts`);
+  - `GET /api/webhooks/eventos` y `GET /api/webhooks/eventos/{eventId}`, solo ADMIN;
+  - la sección `webhooks` de OpenAPI 3.1 en Swagger.
+- `worker.ts`: lectura cada 2 s en lotes de 10 y apagado ordenado con un máximo de 20 s.
+- `config/configBase.ts` y `config/configWorker.ts`: cada proceso valida solo sus variables. Variables `WEBHOOK_URL`, `WEBHOOK_SECRETO`, `WEBHOOK_MAX_INTENTOS`, `WEBHOOK_BACKOFF_BASE_MS`, `WEBHOOK_TIMEOUT_MS` y `WEBHOOK_INTERVALO_MS`.
+- `troubleshooting.md`: el formato del secreto, los `FALLIDO` sin receptor y los eventos duplicados.
+
+### Changed
+- `creditosService.crear` registra el evento en el outbox, en la misma transacción que el crédito.
+- `config.ts` queda solo con las variables de la API; el logger y el cliente de Prisma usan `configBase`.
+- ADR 0006, 0010 y 0013: sus pendientes del webhook pasan a resueltos en el ADR 0018. El 0013 resuelve también la representación de `version`, ya fijada en el ADR 0015.
+- `architecture.md`, `modelo-datos.md`, `variables-entorno.md`, `setup-local.md` y `convenciones.md`: el worker, el lease, las variables por proceso y cómo correr el worker.
+
+### Verificado
+- 51 pruebas de punta a punta contra la API y el worker compilados, con un receptor temporal que verifica la firma. Cubren la atomicidad con la creación, cada tipo de falla, el backoff medido, el receptor caído y de vuelta, dos workers sin envíos duplicados, un worker muerto a mitad (el lease devuelve el evento) y la configuración por proceso. Detalle en el ADR 0018.
+
+### Pendiente
+- Verificar el apagado ordenado del worker en el contenedor Linux (paso 8): en Windows, `SIGTERM` no pasa por el handler.
+
 ## [0.1.0] - 2026-10-01 — Paso 4c: créditos
 
 CRUD de créditos con sus reglas de negocio, historial, resumen, catálogos y Swagger. Decisiones en el [ADR 0017](01-arquitectura/decisions/0017-api-de-creditos-y-swagger.md).

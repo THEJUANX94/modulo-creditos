@@ -8,6 +8,7 @@ import { catalogosRoutes } from './modules/catalogos/catalogosRoutes';
 import { creditosRoutes } from './modules/creditos/creditosRoutes';
 import { healthRoutes } from './modules/health/healthRoutes';
 import { usuariosRoutes } from './modules/usuarios/usuariosRoutes';
+import { webhooksRoutes } from './modules/webhooks/webhooksRoutes';
 import { errorHandler } from './shared/middlewares/errorHandler';
 import { httpLogger } from './shared/middlewares/httpLogger';
 import { notFound } from './shared/middlewares/notFound';
@@ -36,6 +37,7 @@ export function createApp(): Express {
   app.use('/api/usuarios', usuariosRoutes);
   app.use('/api/catalogos', catalogosRoutes);
   app.use('/api/creditos', creditosRoutes);
+  app.use('/api/webhooks', webhooksRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

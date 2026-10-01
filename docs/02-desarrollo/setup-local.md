@@ -5,7 +5,7 @@ tags: [setup, desarrollo, pnpm, node, docker]
 
 # Configurar el entorno de desarrollo local
 
-> **Parcial.** Cubre el workspace, la base de datos y la API. El worker, la web y el mock se agregan en sus pasos.
+> **Parcial.** Cubre el workspace, la base de datos, la API, el worker y las pruebas. La web y el mock se agregan en sus pasos.
 
 ## Requisitos
 
@@ -59,6 +59,14 @@ En Windows no basta con el cambio automático de versión de pnpm. Ver [troubles
 
    Comprobar que responde con `GET http://localhost:3000/api/health/ready`. La documentación interactiva está en **http://localhost:3000/api/docs**: haz login en `POST /api/auth/login`, copia el `accessToken` y pégalo en **Authorize**.
 
+6. **Worker del webhook**, en otra terminal. Envía los eventos `credito.creado` a `WEBHOOK_URL`:
+
+   ```bash
+   pnpm -F @creditos/api dev:worker
+   ```
+
+   Sin un receptor en esa URL (el mock llega en el paso 6), cada evento queda en `ERROR_RED` y, tras los reintentos, en `FALLIDO`. La traza se consulta como ADMIN en `GET /api/webhooks/eventos`.
+
 pnpm bloquea los scripts de instalación de las dependencias que no están en `allowBuilds` (`pnpm-workspace.yaml`). Si agregas una dependencia que los necesita, la instalación falla con `ERR_PNPM_IGNORED_BUILDS`: agrégala a `allowBuilds` y vuelve a instalar.
 
 ## Cuando cambia el esquema
@@ -90,26 +98,47 @@ Desde la raíz:
 | `pnpm lint` | ESLint con reglas con tipos y la convención de nombres |
 | `pnpm format` | Formatea con Prettier (no toca `docs/`) |
 | `pnpm format:check` | Verifica el formato sin modificar archivos |
+| `pnpm test` | Todas las pruebas (Vitest): unitarias e integración. Ver más abajo |
+| `pnpm test:coverage` | Lo mismo, con el reporte de cobertura (texto y `coverage/index.html`) |
+
+## Pruebas automatizadas
+
+```bash
+pnpm test
+```
+
+- **Las de integración necesitan Docker** con el compose de desarrollo (`docker compose up -d`). Antes de correrlas, el setup recrea la BD `ModuloCreditosPruebas` con los scripts de `database/` y crea un usuario por rol. La BD de desarrollo no se toca.
+- **No hace falta configurar nada**: la conexión sale de `DATABASE_URL` de `apps/api/.env`, cambiando solo el nombre de la BD, y los secretos de las pruebas son aleatorios.
+- **Las unitarias corren sin Docker**, en unos segundos:
+
+  ```bash
+  pnpm vitest run --project shared --project api-unitarias
+  ```
+
+- Usan los puertos 4100 (receptor del webhook) y 3998 (prueba de configuración de la API).
+
+Qué cubre cada archivo: [ADR 0019](../01-arquitectura/decisions/0019-implementacion-de-las-pruebas.md).
 
 ## Crear la base de datos sin Docker
 
-Contra un SQL Server 2022 propio, los scripts de `database/` se ejecutan **en orden, una sola vez, sobre una instancia donde `ModuloCreditos` no existe**, con un login administrador y con `sqlcmd`:
+Contra un SQL Server 2022 propio, los scripts de `database/` se ejecutan **en orden, una sola vez, sobre una instancia donde `ModuloCreditos` no existe**, con un login administrador y con `sqlcmd`. El nombre de la BD va en `NOMBRE_BD`:
 
 ```bash
-sqlcmd -S <servidor> -U sa -P <clave sa> -C -f 65001 -v APP_DB_PASSWORD="<clave del login de la app>" -i database/001-crearBaseDatos.sql
+sqlcmd -S <servidor> -U sa -P <clave sa> -C -f 65001 -v NOMBRE_BD=ModuloCreditos APP_DB_PASSWORD="<clave del login de la app>" -i database/001-crearBaseDatos.sql
 ```
 
 ```bash
-sqlcmd -S <servidor> -U sa -P <clave sa> -C -f 65001 -i database/002-esquema.sql
+sqlcmd -S <servidor> -U sa -P <clave sa> -C -f 65001 -v NOMBRE_BD=ModuloCreditos -i database/002-esquema.sql
 ```
 
 ```bash
-sqlcmd -S <servidor> -U sa -P <clave sa> -C -f 65001 -i database/003-catalogos.sql
+sqlcmd -S <servidor> -U sa -P <clave sa> -C -f 65001 -v NOMBRE_BD=ModuloCreditos -i database/003-catalogos.sql
 ```
 
 | Opción | Por qué |
 |---|---|
 | `-f 65001` | Los scripts son UTF-8; sin esta opción, las tildes de los catálogos llegan dañadas |
+| `-v NOMBRE_BD=…` | El nombre de la BD. Las pruebas usan los mismos scripts con `ModuloCreditosPruebas` |
 | `-v APP_DB_PASSWORD=…` | La contraseña del login `appCreditos` no está en el repositorio |
 | `-C` | Confía en el certificado autofirmado del contenedor (solo en desarrollo) |
 

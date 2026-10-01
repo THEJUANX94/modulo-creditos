@@ -2,7 +2,7 @@
   003 — Catálogos: datos obligatorios para que el sistema funcione.
 
   Se ejecuta con sqlcmd, como administrador, después de 002:
-    sqlcmd -S <servidor> -U sa -P <clave> -C -f 65001 -i 003-catalogos.sql
+    sqlcmd -S <servidor> -U sa -P <clave> -C -f 65001 -v NOMBRE_BD=ModuloCreditos -i 003-catalogos.sql
 
   -f 65001 indica que el archivo es UTF-8; sin eso, las tildes llegan dañadas.
   Los usuarios iniciales se crean en el paso 4 (autenticación); los datos de demostración,
@@ -10,7 +10,7 @@
 */
 :on error exit
 
-USE ModuloCreditos;
+USE [$(NOMBRE_BD)];
 GO
 
 SET XACT_ABORT ON;

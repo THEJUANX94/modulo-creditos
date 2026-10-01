@@ -26,6 +26,7 @@ import {
 } from '../../shared/seguridad/eventosSeguridad';
 import type { UsuarioAutenticado } from '../auth/autenticar';
 import * as catalogosService from '../catalogos/catalogosService';
+import * as webhooksService from '../webhooks/webhooksService';
 import * as creditosRepository from './creditosRepository';
 
 // Reglas de negocio del crédito (ADR 0014). La BD repite las que se pueden expresar como
@@ -232,6 +233,10 @@ export async function crear(
 
       const credito = await creditosRepository.obtener(tx, id);
       if (!credito) throw new Error('El crédito recién creado no se pudo leer');
+
+      // El evento del webhook entra al outbox en esta misma transacción: o se guardan el crédito y
+      // el evento, o ninguno. El worker lo envía después (ADR 0006).
+      await webhooksService.registrarCreditoCreado(tx, credito, origen.requestId);
       return credito;
     });
 

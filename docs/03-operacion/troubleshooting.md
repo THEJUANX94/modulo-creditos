@@ -37,6 +37,14 @@ Msg 1934 … CREATE TABLE failed because the following SET options have incorrec
 
 **Solución.** Ya está resuelto en el script, que fija `SET ANSI_NULLS ON` y `SET QUOTED_IDENTIFIER ON` al inicio. Si alguien quita esas líneas, vuelve a fallar. Como el script corre en una sola transacción, un fallo no deja tablas a medias. Para reintentar después de un fallo en el 002 basta con volver a ejecutarlo; si el que falló fue el 001, hay que borrar la BD y el login.
 
+Lo mismo pasa con un `UPDATE` o un `INSERT` suelto sobre una tabla con índice filtrado (`Creditos`, `Sesiones`, `WebhookEventos`): en sqlcmd hay que agregar `-I`, que activa `QUOTED_IDENTIFIER`.
+
+## sqlcmd: "'NOMBRE_BD' scripting variable not defined"
+
+**Causa.** Los scripts de `database/` reciben el nombre de la BD como variable, porque las pruebas los usan para crear `ModuloCreditosPruebas`.
+
+**Solución.** Pasarla en cada script: `-v NOMBRE_BD=ModuloCreditos`. Con Docker, `inicializar.sh` ya la pasa. Ver [setup-local.md](../02-desarrollo/setup-local.md#crear-la-base-de-datos-sin-docker).
+
 ## Las tildes de los catálogos aparecen dañadas ("CÃ©dula")
 
 **Causa.** `sqlcmd` leyó el script UTF-8 con otra página de códigos.
@@ -72,6 +80,40 @@ Msg 1934 … CREATE TABLE failed because the following SET options have incorrec
 **Causa.** El `contains` de Prisma arma un `LIKE` y en SQL Server no escapa los comodines.
 
 **Solución.** Ya está resuelto en `creditosRepository.ts` (`escaparLike`), que los escapa con corchetes (`[%]`). Cualquier búsqueda nueva con `contains` debe pasar por esa función.
+
+## El worker no arranca: "WEBHOOK_SECRETO: Debe empezar por whsec_"
+
+**Causa.** El secreto sigue el formato de Standard Webhooks: `whsec_` + base64 de al menos 32 bytes. Un texto cualquiera, o un base64 sin el prefijo, no sirve.
+
+**Solución.** Generarlo con:
+
+```bash
+node -e "console.log('whsec_' + require('crypto').randomBytes(32).toString('base64'))"
+```
+
+El receptor tiene que tener el mismo secreto. Con `NODE_ENV=production`, además, `WEBHOOK_URL` tiene que ser https.
+
+## Los eventos del webhook quedan en `FALLIDO` con `ERROR_RED`
+
+**Causa.** No hay nada escuchando en `WEBHOOK_URL`: cada intento termina en `ECONNREFUSED` y, tras los reintentos (unos 5 minutos con los valores por defecto), el evento queda `FALLIDO`. En desarrollo pasa si el worker corre sin el mock receptor.
+
+**Solución.** Levantar el receptor antes del worker, o crear los créditos de prueba con el receptor arriba. Un `FALLIDO` no se reenvía ([ADR 0018](../01-arquitectura/decisions/0018-webhook-entrega-firma-y-traza.md)); la traza de cada intento está en `GET /api/webhooks/eventos/{eventId}` (ADMIN).
+
+## El receptor recibe el mismo evento dos veces
+
+**No es un error.** La entrega es al menos una vez: si un worker muere entre el envío y el registro del resultado, otro retoma el evento al vencer su lease (60 s) y lo envía de nuevo. Las dos peticiones llevan el mismo `webhook-id`, y el receptor deduplica con él. En la traza se ve como un número de intento que falta.
+
+## `pnpm test` falla: "Recrear la BD de pruebas (¿está corriendo Docker?) falló"
+
+**Causa.** El setup de las pruebas de integración recrea `ModuloCreditosPruebas` con `docker compose run dbInit`, y eso necesita Docker arriba y el `.env` de la raíz. El mensaje trae la salida de sqlcmd con el error concreto.
+
+**Solución.** Levantar Docker Desktop y correr `docker compose up -d`. Las unitarias no necesitan Docker: `pnpm vitest run --project shared --project api-unitarias`.
+
+## Las pruebas fallan con `EADDRINUSE` en el puerto 4100 o 3998
+
+**Causa.** El receptor del webhook de las pruebas escucha en el 4100, y la prueba de configuración levanta la API en el 3998. Otro proceso ocupa el puerto; por ejemplo, una corrida anterior que quedó colgada.
+
+**Solución.** Cerrar ese proceso. En Windows, `netstat -ano | findstr :4100` muestra su PID.
 
 ## Prisma inserta `N'PENDIENTE'` literal, o no genera `create` para `Creditos`
 

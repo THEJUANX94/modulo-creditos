@@ -1,14 +1,9 @@
 import { z } from 'zod';
+import { configBase, validarVariables } from './configBase';
 
-// Única lectura de process.env de la API: el resto del código usa `config`.
-// Si una variable falta o es inválida, la API no arranca y dice cuál.
-const esquemaVariables = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+// Configuración de la API: la base común más las variables propias de la API.
+const esquemaVariablesApi = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-  DATABASE_URL: z
-    .string()
-    .startsWith('sqlserver://', 'Debe ser una cadena de conexión sqlserver://'),
   CORS_ORIGINS: z
     .string()
     .transform((valor) =>
@@ -28,20 +23,11 @@ const esquemaVariables = z.object({
     .transform((valor) => valor === 'true'),
 });
 
-const resultado = esquemaVariables.safeParse(process.env);
-
-if (!resultado.success) {
-  console.error(`Configuración inválida:\n${z.prettifyError(resultado.error)}`);
-  process.exit(1);
-}
-
-const variables = resultado.data;
+const variables = validarVariables(esquemaVariablesApi);
 
 export const config = {
-  nodeEnv: variables.NODE_ENV,
+  ...configBase,
   port: variables.PORT,
-  logLevel: variables.LOG_LEVEL,
-  databaseUrl: variables.DATABASE_URL,
   corsOrigins: variables.CORS_ORIGINS,
   trustProxy: variables.TRUST_PROXY,
   jwtSecret: variables.JWT_SECRET,

@@ -12,3 +12,7 @@ export * from './creditos/respuestasCreditos';
 export * from './errores/codigosError';
 export * from './http/paginacion';
 export * from './http/respuestas';
+export * from './webhooks/esquemasWebhooks';
+export * from './webhooks/estadosWebhook';
+export * from './webhooks/eventoCreditoCreado';
+export * from './webhooks/respuestasWebhooks';

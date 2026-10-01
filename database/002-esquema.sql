@@ -2,7 +2,7 @@
   002 — Esquema: tablas, llaves, restricciones, índices, triggers de inmutabilidad y permisos.
 
   Se ejecuta con sqlcmd, como administrador, después de 001:
-    sqlcmd -S <servidor> -U sa -P <clave> -C -f 65001 -i 002-esquema.sql
+    sqlcmd -S <servidor> -U sa -P <clave> -C -f 65001 -v NOMBRE_BD=ModuloCreditos -i 002-esquema.sql
 
   Todo el script corre en una sola transacción: si algo falla, sqlcmd se detiene (:on error exit),
   la conexión se cierra y la transacción se revierte. No queda un esquema a medias.
@@ -11,7 +11,7 @@
 */
 :on error exit
 
-USE ModuloCreditos;
+USE [$(NOMBRE_BD)];
 GO
 
 -- Obligatorias para crear columnas calculadas indexadas e índices filtrados.

@@ -202,8 +202,8 @@ Se inserta en la misma transacción que el crédito ([ADR 0006](decisions/0006-w
 | `creditoId` | `UNIQUEIDENTIFIER` | No | FK → `Creditos` | — |
 | `payload` | `NVARCHAR(MAX)` | No | `CK_WebhookEventos_payload` (`ISJSON`) | Snapshot exacto del cuerpo: cada reintento envía lo mismo |
 | `estado` | `NVARCHAR(20)` | No | `CK_WebhookEventos_estado`, `DEFAULT 'PENDIENTE'` | PENDIENTE, ENTREGADO, FALLIDO |
-| `intentos` | `SMALLINT` | No | `DEFAULT 0` | — |
-| `proximoIntento` | `DATETIME2(3)` | No | `DEFAULT SYSUTCDATETIME()` | Backoff exponencial |
+| `intentos` | `SMALLINT` | No | `DEFAULT 0` | Se incrementa al reclamar el evento: es el `numeroIntento` del envío en curso ([ADR 0018](decisions/0018-webhook-entrega-firma-y-traza.md)) |
+| `proximoIntento` | `DATETIME2(3)` | No | `DEFAULT SYSUTCDATETIME()` | Backoff exponencial. Al reclamar, se corre 60 s al futuro (lease): si el worker muere, el evento reaparece |
 | `requestId` | `NVARCHAR(100)` | Sí | — | La petición que creó el crédito |
 | `fechaCreacion` | `DATETIME2(3)` | No | `DEFAULT SYSUTCDATETIME()` | — |
 | `fechaEntrega` | `DATETIME2(3)` | Sí | — | — |
@@ -222,7 +222,7 @@ Traza de cada envío al sistema externo.
 | `resultado` | `NVARCHAR(20)` | No | `CK_WebhookIntentos_resultado` | EXITOSO, ERROR_HTTP, TIMEOUT, ERROR_RED |
 | `statusHttp` | `SMALLINT` | Sí | — | NULL si no hubo respuesta |
 | `duracionMs` | `INT` | Sí | — | — |
-| `error` | `NVARCHAR(1000)` | Sí | — | — |
+| `error` | `NVARCHAR(1000)` | Sí | — | `TIMEOUT` y `ERROR_RED`: el error. `ERROR_HTTP`: los primeros 500 caracteres de la respuesta |
 | `fecha` | `DATETIME2(3)` | No | `DEFAULT SYSUTCDATETIME()` | — |
 
 ## Seguridad en la base de datos

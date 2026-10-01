@@ -7,6 +7,7 @@ import { registrarDocsCatalogos } from '../modules/catalogos/catalogosDocs';
 import { registrarDocsCreditos } from '../modules/creditos/creditosDocs';
 import { registrarDocsHealth } from '../modules/health/healthDocs';
 import { registrarDocsUsuarios } from '../modules/usuarios/usuariosDocs';
+import { registrarDocsWebhooks } from '../modules/webhooks/webhooksDocs';
 
 // OpenAPI 3.1 generado desde los mismos esquemas Zod que validan la API (ADR 0007): la
 // documentación no se desincroniza de lo que la API acepta y devuelve.
@@ -24,6 +25,7 @@ export function generarDocumentoOpenApi() {
   registrarDocsUsuarios(registro);
   registrarDocsCatalogos(registro);
   registrarDocsCreditos(registro);
+  registrarDocsWebhooks(registro);
 
   return new OpenApiGeneratorV31(registro.definitions).generateDocument({
     openapi: '3.1.0',

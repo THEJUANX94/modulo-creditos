@@ -97,7 +97,8 @@ El diccionario completo, tabla por tabla, está en [modelo-datos.md](../modelo-d
 
 ## Por definir en la implementación
 
-- Cómo reclama el worker los eventos del outbox sin choques entre réplicas: puede requerir columnas en `WebhookEventos`.
-- La representación de `version` (`ROWVERSION`) en la API.
+Resuelto en el [ADR 0018](0018-webhook-entrega-firma-y-traza.md): el worker reclama los eventos con un `UPDATE` atómico (`UPDLOCK, READPAST`) y un lease sobre `proximoIntento`, **sin columnas nuevas**. `intentos` se incrementa al reclamar y es el `numeroIntento` del envío en curso.
+
+Resuelto en el [ADR 0015](0015-contrato-http-y-base-de-la-api.md): `version` viaja como texto hexadecimal (`"0x00000000000007E1"`).
 
 Última actualización: 2026-10-01

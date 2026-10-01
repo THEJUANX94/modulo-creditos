@@ -10,6 +10,7 @@ export const codigosError = {
   CSRF_INVALIDO: { status: 403 },
   CREDITO_NOT_FOUND: { status: 404 },
   USUARIO_NOT_FOUND: { status: 404 },
+  EVENTO_WEBHOOK_NOT_FOUND: { status: 404 },
   RUTA_NO_ENCONTRADA: { status: 404 },
   CORREO_DUPLICADO: { status: 409 },
   CREDITO_DUPLICADO: { status: 409 },

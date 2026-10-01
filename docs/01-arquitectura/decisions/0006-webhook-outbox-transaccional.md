@@ -64,13 +64,10 @@ La entrega es **al menos una vez** (*at-least-once*). Un evento puede llegar dos
 
 ## Por definir en la implementación
 
-- N (máximo de intentos), la base del backoff y el timeout de cada envío.
-- Qué respuestas se reintentan; por ejemplo, si un 4xx se reintenta o pasa directo a `FALLIDO`.
-- El intervalo de lectura del worker y cómo reclama eventos sin choques entre réplicas.
-- El algoritmo y el header de la firma HMAC.
-- Si existe un reenvío manual de los eventos `FALLIDO`.
-- La configuración del mock receptor.
+- La configuración del mock receptor (paso 6).
+
+Resuelto en el [ADR 0018](0018-webhook-entrega-firma-y-traza.md): el contrato del evento, la firma (Standard Webhooks: HMAC-SHA256 en `webhook-signature`), 6 intentos con backoff de 10 s × 2ⁿ y jitter, timeout de 15 s, qué se reintenta (timeout, red, 408, 429 y 5xx; otro 4xx o un 3xx pasan a `FALLIDO`), el reclamo con `UPDLOCK, READPAST` y un lease de 60 s, la lectura cada 2 s en lotes de 10, y **sin reenvío manual** de los `FALLIDO`.
 
 Resuelto: las tablas `WebhookEventos` (outbox) y `WebhookIntentos` (traza inmutable) están en el [ADR 0013](0013-modelo-de-datos.md), y el mock vive en `apps/webhookMock` ([ADR 0012](0012-toolchain-del-monorepo.md)).
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

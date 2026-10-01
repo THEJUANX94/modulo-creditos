@@ -77,9 +77,10 @@ Se registra en tablas de la BD que solo admiten inserciones:
 
 ## Por definir en la implementación
 
-- Si el requestId también viaja al receptor del webhook (en un header).
 - La retención de los logs técnicos y de la auditoría.
 - Qué partes de la auditoría expone la API y muestra el frontend (por ejemplo, el historial en el detalle del crédito).
+
+Resuelto en el [ADR 0018](0018-webhook-entrega-firma-y-traza.md): el requestId **viaja al receptor del webhook** en `X-Request-Id`, y el worker lo pone en cada línea de log del envío.
 
 Resuelto en el [ADR 0016](0016-autenticacion-sesiones-y-permisos.md): la tabla `EventosSeguridad` (inmutable), y **la auditoría va en la misma transacción que el cambio que registra**. Los intentos fallidos y los accesos denegados se registran aparte, sin hacer fallar la respuesta si el registro falla. Los logs de petición llevan también el `usuarioId`.
 

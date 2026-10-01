@@ -1,10 +1,10 @@
 import { pino } from 'pino';
-import { config } from '../config/config';
+import { configBase } from '../config/configBase';
 import { contextoPeticion } from './contextoPeticion';
 
 // JSON a stdout (ADR 0010). En desarrollo, `pnpm dev` lo pasa por pino-pretty.
 export const logger = pino({
-  level: config.logLevel,
+  level: configBase.logLevel,
   timestamp: pino.stdTimeFunctions.isoTime,
   // El requestId y el usuario de la petición en curso llegan a cada línea sin pasarlos a mano.
   mixin() {

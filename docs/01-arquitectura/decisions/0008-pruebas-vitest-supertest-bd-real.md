@@ -7,7 +7,7 @@ tags: [adr, pruebas, vitest, supertest, sql-server]
 
 ## Estado
 
-Aceptado (2026-09-30).
+Aceptado (2026-09-30). Implementado en el paso 5 ([ADR 0019](0019-implementacion-de-las-pruebas.md)).
 
 ## Contexto
 
@@ -38,10 +38,13 @@ Parte de las garantías del sistema no está en el código TypeScript: está en 
 
 ## Por definir en la implementación
 
-- La BD de pruebas: nombre y cómo se crea.
-- Cómo se limpian los datos entre pruebas.
-- Si el frontend tiene pruebas automatizadas.
-- La cobertura mínima esperada.
-- La ejecución en CI.
+- Si el frontend tiene pruebas automatizadas (paso 7).
 
-Última actualización: 2026-09-30
+Resuelto en el [ADR 0019](0019-implementacion-de-las-pruebas.md):
+
+- **La BD de pruebas**: `ModuloCreditosPruebas`, recreada en cada corrida por el `dbInit` del compose con los mismos scripts.
+- **La limpieza**: no se limpian datos, porque las tablas de auditoría son inmutables. Cada prueba usa datos únicos y los archivos corren en serie.
+- **La cobertura**: un reporte sin umbral.
+- **CI**: se documenta con el despliegue (paso 9).
+
+Última actualización: 2026-10-01
