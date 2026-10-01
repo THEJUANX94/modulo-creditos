@@ -5,7 +5,7 @@ tags: [arquitectura, express, react, sql-server, webhook]
 
 # Arquitectura
 
-> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0018. Faltan el diagrama de arquitectura y la propuesta de despliegue.
+> **Documento parcial.** Describe los componentes y la estructura decididos en los ADR 0001 a 0020. Faltan el diagrama de arquitectura y la propuesta de despliegue.
 
 ## 1. Contexto
 
@@ -19,7 +19,7 @@ Una entidad del sector financiero solidario administra las solicitudes de crédi
 | API | Express + TypeScript (`server.ts`) | API REST, autenticación, validación y reglas de negocio | Sin estado; todo se guarda en la BD |
 | Worker | El mismo código de la API (`worker.ts`), con su propia configuración | Envía los eventos del outbox al sistema externo, firmados y con reintentos. Escala horizontalmente: la BD reparte los eventos | Sin estado; los eventos y su traza están en la BD |
 | SQL Server | SQL Server | Créditos, historial, usuarios, outbox y traza del webhook | **Con estado** |
-| Mock receptor | *Por definir* | Simula el sistema externo: verifica la firma, deduplica y puede fallar a voluntad | *Por definir* |
+| Mock receptor | Node.js (`node:http`) + la librería oficial de Standard Webhooks | Simula el sistema externo: verifica la firma, deduplica y falla a voluntad, con una página para cambiar el modo en vivo ([ADR 0020](decisions/0020-mock-del-sistema-externo.md)) | En memoria; se pierde al reiniciar |
 
 Decisiones relacionadas: [ADR 0001](decisions/0001-monorepo-pnpm-workspaces.md) (repositorio y docker-compose), [ADR 0002](decisions/0002-express-typescript-react-vite.md) (stack), [ADR 0006](decisions/0006-webhook-outbox-transaccional.md) (worker y mock) y [ADR 0018](decisions/0018-webhook-entrega-firma-y-traza.md) (entrega, firma y traza).
 

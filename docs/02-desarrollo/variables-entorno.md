@@ -7,7 +7,7 @@ tags: [config, variables-entorno, secretos]
 
 Cada componente tiene su `.env` (que git ignora) y su `.env.example` (versionado, sin secretos reales). Para empezar, se copia el `.env.example` a `.env` y se reemplazan las claves.
 
-> *Parcial.* Faltan las variables del mock (paso 6) y de la web (paso 7).
+> *Parcial.* Faltan las variables de la web (paso 7).
 
 ## docker-compose — `.env` de la raíz
 
@@ -55,6 +55,18 @@ La clave va entre llaves (`password={…}`) para que los caracteres especiales n
 | `WEBHOOK_BACKOFF_BASE_MS` | No | `10000` | No | Espera base del backoff: base × 2^(n−1), con jitter de ±20 % |
 | `WEBHOOK_TIMEOUT_MS` | No | `15000` | No | Espera máxima de la respuesta en cada intento (1000 a 30000) |
 | `WEBHOOK_INTERVALO_MS` | No | `2000` | No | Cada cuánto se lee el outbox cuando no hay un lote lleno |
+
+## Mock del sistema externo — `apps/webhookMock/.env`
+
+Las valida `apps/webhookMock/src/config.ts` al arrancar ([ADR 0020](../01-arquitectura/decisions/0020-mock-del-sistema-externo.md)).
+
+| Variable | Obligatoria | Default | Secreto | Para qué |
+|---|---|---|---|---|
+| `PORT` | No | `4000` | No | Puerto del mock. La API apunta a él con `WEBHOOK_URL` |
+| `WEBHOOK_SECRETO` | Sí | — | **Sí** | El mismo de la API. Con otro, cada envío responde 401 |
+| `MOCK_MODO` | No | `acepta` | No | Comportamiento al arrancar: `acepta`, `falla`, `rechaza`, `lento`, `intermitente` o `fallaPrimeros`. Se cambia en vivo desde la página |
+| `MOCK_FALLAS_POR_EVENTO` | No | `2` | No | En `fallaPrimeros`: cuántos envíos de cada evento fallan antes de aceptar (1 a 10) |
+| `MOCK_RETRASO_MS` | No | `20000` | No | En `lento`: cuánto tarda en responder (1000 a 120000). Mayor que `WEBHOOK_TIMEOUT_MS`, para que el worker corte por timeout |
 
 ## Pruebas
 

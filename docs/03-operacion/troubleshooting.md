@@ -99,6 +99,12 @@ El receptor tiene que tener el mismo secreto. Con `NODE_ENV=production`, además
 
 **Solución.** Levantar el receptor antes del worker, o crear los créditos de prueba con el receptor arriba. Un `FALLIDO` no se reenvía ([ADR 0018](../01-arquitectura/decisions/0018-webhook-entrega-firma-y-traza.md)); la traza de cada intento está en `GET /api/webhooks/eventos/{eventId}` (ADMIN).
 
+## Todos los envíos al mock quedan en `ERROR_HTTP` 401 y `FALLIDO`
+
+**Causa.** `WEBHOOK_SECRETO` no es el mismo en `apps/api/.env` y en `apps/webhookMock/.env`, así que la firma no coincide. La página del mock los muestra como "firma inválida". Un 401 es un rechazo definitivo: el worker no reintenta.
+
+**Solución.** Copiar el secreto de la API al mock y reiniciar el mock. Los eventos que ya quedaron `FALLIDO` no se reenvían.
+
 ## El receptor recibe el mismo evento dos veces
 
 **No es un error.** La entrega es al menos una vez: si un worker muere entre el envío y el registro del resultado, otro retoma el evento al vencer su lease (60 s) y lo envía de nuevo. Las dos peticiones llevan el mismo `webhook-id`, y el receptor deduplica con él. En la traza se ve como un número de intento que falta.

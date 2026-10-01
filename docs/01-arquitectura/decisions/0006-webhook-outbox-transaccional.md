@@ -64,7 +64,7 @@ La entrega es **al menos una vez** (*at-least-once*). Un evento puede llegar dos
 
 ## Por definir en la implementación
 
-- La configuración del mock receptor (paso 6).
+Resuelto en el [ADR 0020](0020-mock-del-sistema-externo.md): el mock receptor verifica la firma con la librería oficial de Standard Webhooks, valida el contrato, deduplica por `webhook-id` (un duplicado responde 200) y tiene seis modos (`acepta`, `falla`, `rechaza`, `lento`, `intermitente` y `fallaPrimeros`) que se cambian en vivo desde su página.
 
 Resuelto en el [ADR 0018](0018-webhook-entrega-firma-y-traza.md): el contrato del evento, la firma (Standard Webhooks: HMAC-SHA256 en `webhook-signature`), 6 intentos con backoff de 10 s × 2ⁿ y jitter, timeout de 15 s, qué se reintenta (timeout, red, 408, 429 y 5xx; otro 4xx o un 3xx pasan a `FALLIDO`), el reclamo con `UPDLOCK, READPAST` y un lease de 60 s, la lectura cada 2 s en lotes de 10, y **sin reenvío manual** de los `FALLIDO`.
 

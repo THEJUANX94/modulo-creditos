@@ -227,7 +227,8 @@ Desde el paso 5, estos escenarios están en la suite automatizada (`webhook.test
 
 ## Por definir en la implementación
 
-- La configuración del mock receptor: puerto, ventana de 5 minutos, deduplicación y fallas a voluntad (paso 6). `.env.example` apunta a `http://localhost:4000/webhooks/creditos` de forma provisional.
 - En el compose (paso 8): `stop_grace_period: 25s` para el worker, y cómo se cumple https si la demo corre con `NODE_ENV=production`.
+
+Resuelto en el [ADR 0020](0020-mock-del-sistema-externo.md): el mock escucha en `http://localhost:4000/webhooks/creditos`, verifica la firma con la librería oficial (ventana de 5 minutos), deduplica por `webhook-id` y tiene seis modos que se cambian en vivo.
 
 Última actualización: 2026-10-01

@@ -5,6 +5,31 @@ tags: [modulo-creditos, changelog]
 
 # Bitácora de cambios — Módulo de Créditos
 
+## [0.1.0] - 2026-10-01 — Paso 6: mock del sistema externo
+
+El receptor del webhook que simula el sistema externo, para mostrar en vivo cada respuesta posible. Decisiones en el [ADR 0020](01-arquitectura/decisions/0020-mock-del-sistema-externo.md).
+
+### Added
+- `apps/webhookMock` (`node:http`, sin framework). Ante cada `POST /webhooks/creditos`:
+  - verifica la firma con la librería oficial `standardwebhooks`, con su ventana de 5 minutos: si falla, 401;
+  - valida el contrato con el esquema de `@creditos/shared`: si no lo cumple, 400;
+  - deduplica por `webhook-id`: un evento ya procesado responde 200, marcado como duplicado.
+- Seis modos: `acepta`, `falla`, `rechaza`, `lento`, `intermitente` y `fallaPrimeros`. `MOCK_MODO` fija el modo al arrancar, y `PUT /control` lo cambia en vivo.
+- Rutas:
+  - `GET /`: página que se refresca sola, en claro y oscuro, con los colores del design system;
+  - `GET /recibidos`: lo mismo en JSON;
+  - `GET /salud`.
+- Scripts `dev`, `build` y `start` del mock, su `.env.example`, y la fila del mock en `variables-entorno.md`.
+- `troubleshooting.md`: el 401 por secretos distintos entre la API y el mock.
+
+### Changed
+- ADR 0006 y 0018: sus pendientes del mock pasan a resueltos en el ADR 0020.
+- `architecture.md`: el componente del mock. `setup-local.md`: cómo levantar el mock y el orden mock → worker.
+
+### Verificado
+- 22 pruebas con procesos reales (mock, worker y API compilados): cada modo cambiado en vivo con su resultado en la traza, el mock detenido y de vuelta, cuerpo alterado, firma de hace 10 minutos, payload fuera del contrato, duplicados, rutas y cuerpo grande (413).
+- La página en el navegador, en claro y oscuro, sin errores de consola. Los controles se crean una sola vez, y el refresco no le quita el foco al teclado.
+
 ## [0.1.0] - 2026-10-01 — Paso 5: pruebas automatizadas
 
 Las verificaciones de punta a punta de los pasos 4b a 4d pasan a una suite de Vitest contra un SQL Server real. Decisiones en el [ADR 0019](01-arquitectura/decisions/0019-implementacion-de-las-pruebas.md).
