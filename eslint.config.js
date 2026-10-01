@@ -49,17 +49,15 @@ export default defineConfig(
     },
   },
   {
-    // En los repositories, los campos de relación de Prisma llevan el nombre de su tabla
-    // (Usuarios, Sesiones…), que va en PascalCase: aparecen como claves en select e include.
+    // En los repositories, las claves de los objetos las dicta la API de Prisma, no este código:
+    // relaciones con el nombre de su tabla (Usuarios), agregados (_count, _sum) y llaves compuestas
+    // (identificacion_tipoIdentificacion). Ahí no se verifica su formato.
     files: ['**/*Repository.ts'],
     rules: {
       // Va antes que la regla base: entre selectores igual de específicos, gana el primero.
       '@typescript-eslint/naming-convention': [
         'error',
-        {
-          selector: 'objectLiteralProperty',
-          format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
-        },
+        { selector: 'objectLiteralProperty', format: null },
         ...namingConvention,
       ],
     },

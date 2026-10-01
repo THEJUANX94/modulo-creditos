@@ -33,6 +33,7 @@ Las valida `apps/api/src/config/config.ts` al arrancar: si falta una o es invál
 | `TRUST_PROXY` | No | `0` | No | Cuántos proxies hay delante de la API (Nginx = 1), para que la IP real llegue a la auditoría y al rate limit |
 | `JWT_SECRET` | Sí | — | **Sí** | Clave HS256 de los access tokens, de al menos 32 caracteres aleatorios. Se genera con `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`. Cambiarla invalida todos los access tokens vigentes |
 | `USUARIOS_DEMO_CLAVE` | Solo para `usuarios:crear` | — | **Sí** | Contraseña de los cuatro usuarios demo, de 12 a 128 caracteres. La lee el script, no la API |
+| `DOCS_HABILITADA` | No | `true` | No | Swagger UI en `/api/docs` y el JSON en `/api/docs/openapi.json`. En un despliegue real va en `false`, para no publicar el mapa de la API |
 | `DATABASE_ADMIN_URL` | Solo para `prisma db pull` | — | **Sí** | Conexión de administrador para la introspección. La lee `prisma.config.ts`, no la app. **Nunca en producción** |
 
 La clave va entre llaves (`password={…}`) para que los caracteres especiales no rompan la cadena de conexión.

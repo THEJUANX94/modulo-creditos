@@ -44,9 +44,9 @@ Si se escriben tres veces, se desincronizan. La prueba recomienda además docume
 ## Por definir en la implementación
 
 - La integración con los formularios del frontend.
-- Cómo se traduce un error de Zod a `details`.
-- La autenticación desde Swagger UI, para probar los endpoints protegidos.
+
+Resuelto en el [ADR 0017](0017-api-de-creditos-y-swagger.md): OpenAPI 3.1. Los metadatos van con `.meta()` de Zod 4, sin que `@creditos/shared` dependa de la librería de OpenAPI; las respuestas también tienen esquema Zod; hay un `*Docs.ts` por módulo; Swagger UI tiene el botón Authorize con el accessToken; y `DOCS_HABILITADA` lo apaga en producción.
 
 Resuelto en el [ADR 0015](0015-contrato-http-y-base-de-la-api.md): Zod 4.6 (en el catalog del workspace), y un error de validación de entrada responde 400 `VALIDACION_FALLIDA` con `details` por campo.
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

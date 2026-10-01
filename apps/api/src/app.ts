@@ -2,7 +2,10 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { config } from './config/config';
+import { montarDocumentacion } from './docs/openapi';
 import { authRoutes } from './modules/auth/authRoutes';
+import { catalogosRoutes } from './modules/catalogos/catalogosRoutes';
+import { creditosRoutes } from './modules/creditos/creditosRoutes';
 import { healthRoutes } from './modules/health/healthRoutes';
 import { usuariosRoutes } from './modules/usuarios/usuariosRoutes';
 import { errorHandler } from './shared/middlewares/errorHandler';
@@ -28,8 +31,11 @@ export function createApp(): Express {
   app.use('/api/health', healthRoutes);
 
   app.use(limiteGlobal);
+  montarDocumentacion(app);
   app.use('/api/auth', authRoutes);
   app.use('/api/usuarios', usuariosRoutes);
+  app.use('/api/catalogos', catalogosRoutes);
+  app.use('/api/creditos', creditosRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

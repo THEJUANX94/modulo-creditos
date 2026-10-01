@@ -57,7 +57,7 @@ En Windows no basta con el cambio automático de versión de pnpm. Ver [troubles
    pnpm -F @creditos/api dev
    ```
 
-   Comprobar que responde con `GET http://localhost:3000/api/health/ready`.
+   Comprobar que responde con `GET http://localhost:3000/api/health/ready`. La documentación interactiva está en **http://localhost:3000/api/docs**: haz login en `POST /api/auth/login`, copia el `accessToken` y pégalo en **Authorize**.
 
 pnpm bloquea los scripts de instalación de las dependencias que no están en `allowBuilds` (`pnpm-workspace.yaml`). Si agregas una dependencia que los necesita, la instalación falla con `ERR_PNPM_IGNORED_BUILDS`: agrégala a `allowBuilds` y vuelve a instalar.
 

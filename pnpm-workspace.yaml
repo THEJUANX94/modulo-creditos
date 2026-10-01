@@ -11,3 +11,5 @@ allowBuilds:
   esbuild: true
   prisma: true
   '@prisma/engines': true
+  # Telemetría de instalación que trae swagger-ui-dist: denegada a propósito, no la necesita.
+  '@scarf/scarf': false

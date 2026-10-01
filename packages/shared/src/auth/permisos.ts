@@ -1,4 +1,4 @@
-import type { EstadoCredito } from '../creditos/estadosCredito';
+import type { EstadoDestino } from '../creditos/estadosCredito';
 import type { Rol } from './roles';
 
 // Matriz de permisos (ADR 0016). La API la hace cumplir; el frontend la usa para mostrar u ocultar acciones.
@@ -9,6 +9,7 @@ export const permisos = {
   crearCredito: ['ASESOR', 'ADMIN'],
   editarCredito: ['ASESOR', 'ADMIN'],
   eliminarCredito: ['ASESOR', 'ADMIN'],
+  verEliminados: ['ADMIN'],
   verTrazaWebhook: ['ADMIN'],
   gestionarUsuarios: ['ADMIN'],
 } as const satisfies Record<string, readonly Rol[]>;
@@ -23,12 +24,12 @@ export const rolesPorEstadoDestino = {
   RECHAZADO: ['ANALISTA', 'ADMIN'],
   DESEMBOLSADO: ['TESORERIA', 'ADMIN'],
   CANCELADO: ['ASESOR', 'ANALISTA', 'ADMIN'],
-} as const satisfies Record<Exclude<EstadoCredito, 'SOLICITADO'>, readonly Rol[]>;
+} as const satisfies Record<EstadoDestino, readonly Rol[]>;
 
 export function puede(rol: Rol, accion: Accion): boolean {
   return (permisos[accion] as readonly Rol[]).includes(rol);
 }
 
-export function puedeCambiarA(rol: Rol, estado: Exclude<EstadoCredito, 'SOLICITADO'>): boolean {
+export function puedeCambiarA(rol: Rol, estado: EstadoDestino): boolean {
   return (rolesPorEstadoDestino[estado] as readonly Rol[]).includes(rol);
 }

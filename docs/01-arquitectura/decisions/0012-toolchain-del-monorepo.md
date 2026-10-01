@@ -24,7 +24,7 @@ Los ADR 0001 y 0002 fijaron el monorepo con pnpm, Express y React, pero dejaron 
 | pnpm | **12.8.1** (`packageManager`), instalado globalmente con npm | Es la última versión. Ver la nota de instalación más abajo |
 | Versiones compartidas | **Catalogs de pnpm** (`catalog:` en `pnpm-workspace.yaml`) | `typescript` y `@types/node` se declaran una vez y los paquetes no se desalinean |
 | Rangos | **`^` + `pnpm-lock.yaml`**, salvo TypeScript, que va con `~6.0.3` | El lockfile fija la versión exacta. TypeScript no puede pasar a 6.1 sin romper typescript-eslint |
-| Scripts de dependencias | **`allowBuilds`** en `pnpm-workspace.yaml` (hoy solo `esbuild`) | pnpm bloquea por defecto los scripts de instalación de terceros, y la instalación falla si alguno no está aprobado |
+| Scripts de dependencias | **`allowBuilds`** en `pnpm-workspace.yaml` (`esbuild`, `prisma` y `@prisma/engines`; `@scarf/scarf` denegado) | pnpm bloquea por defecto los scripts de instalación de terceros, y la instalación falla si alguno no está aprobado |
 | TypeScript | **6.0** | Es la última versión que admite typescript-eslint, lo que habilita el lint con información de tipos |
 | Rigor de TypeScript | **`strict`** + `noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`, `verbatimModuleSyntax` | Atrapa más errores en código financiero. `verbatimModuleSyntax` obliga a usar `import type`, que es lo correcto en ESM |
 | Tipos globales | **`types: []`** en la base; `["node"]` solo en `api` y `webhookMock` | `@creditos/shared` no puede usar APIs de Node por accidente, porque también corre en el navegador |
@@ -67,7 +67,7 @@ pnpm 12 se distribuye como binario nativo: su paquete trae un archivo provisiona
   - TypeScript queda fijado en la 6.0 hasta que typescript-eslint soporte la 7.
   - Quien clone el repositorio en Windows necesita pnpm 12 instalado globalmente con npm. No basta con el cambio automático de versión de pnpm.
   - tsx y tsup no verifican tipos: `pnpm typecheck` tiene que correr aparte (y en CI).
-  - Cada dependencia nueva con scripts de instalación (por ejemplo, Prisma) hay que aprobarla en `allowBuilds`.
+  - Cada dependencia nueva con scripts de instalación (por ejemplo, Prisma) hay que aprobarla en `allowBuilds`. También sirve para **denegar**: `@scarf/scarf`, la telemetría de instalación que trae `swagger-ui-dist`, está en `false` y no se ejecuta.
 
 ## Verificación
 
@@ -82,4 +82,4 @@ Durante el scaffold se verificó con un export temporal en `shared`, eliminado d
 - Las reglas de lint específicas de React (hooks), al crear la web.
 - La configuración de Vitest (paso de pruebas).
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

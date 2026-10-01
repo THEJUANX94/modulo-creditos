@@ -26,8 +26,7 @@ apps/api/src/
 │  │  ├─ creditosRoutes.ts        rutas y middlewares (autenticación, validación)
 │  │  ├─ creditosController.ts    traduce HTTP ↔ service
 │  │  ├─ creditosService.ts       reglas de negocio y transacciones
-│  │  ├─ creditosRepository.ts    acceso a datos
-│  │  └─ estadoTransiciones.ts    transiciones de estado permitidas
+│  │  └─ creditosRepository.ts    acceso a datos
 │  ├─ asociados/
 │  ├─ webhooks/
 │  └─ auth/
@@ -45,7 +44,7 @@ apps/api/src/
 | service | Aplica las reglas de negocio y abre las transacciones | Conocer Express |
 | repository | Ejecuta las consultas a la BD | Reglas de negocio |
 
-Las transiciones permitidas viven en `estadoTransiciones.ts`, aparte del service, para que se puedan leer y probar por sí solas.
+Las transiciones permitidas viven aparte del service, para que se puedan leer y probar por sí solas. **Cambio en el paso 4c:** el mapa pasó de `estadoTransiciones.ts` a `@creditos/shared` (`transicionesPermitidas`), para que el frontend muestre solo las acciones válidas con la misma fuente ([ADR 0017](0017-api-de-creditos-y-swagger.md)).
 
 ## Alternativas consideradas
 
@@ -63,9 +62,8 @@ Las transiciones permitidas viven en `estadoTransiciones.ts`, aparte del service
 
 ## Por definir en la implementación
 
-- Qué validaciones viven en los esquemas Zod (forma y rangos) y cuáles en el service (duplicados, transiciones).
-- El formato de las respuestas exitosas. El de error lo fija el enunciado: `{ "success": false, "error": { "code", "message" } }`.
+Resuelto en el [ADR 0015](0015-contrato-http-y-base-de-la-api.md): el formato de las respuestas exitosas (`{ success, data, meta }`). Resuelto en el ADR 0014: qué valida Zod (forma y rangos) y qué el service (lo que depende de la BD o del estado).
 
 Resuelto en el [ADR 0014](0014-reglas-de-negocio.md): la regla de duplicados y el mapa de transiciones. Las reglas que se pueden expresar como restricción se repiten en la BD como defensa en profundidad (tabla "Dónde vive cada regla").
 
-Última actualización: 2026-09-30
+Última actualización: 2026-10-01

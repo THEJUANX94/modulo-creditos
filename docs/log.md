@@ -5,6 +5,38 @@ tags: [modulo-creditos, changelog]
 
 # Bitácora de cambios — Módulo de Créditos
 
+## [0.1.0] - 2026-10-01 — Paso 4c: créditos
+
+CRUD de créditos con sus reglas de negocio, historial, resumen, catálogos y Swagger. Decisiones en el [ADR 0017](01-arquitectura/decisions/0017-api-de-creditos-y-swagger.md).
+
+### Added
+- `@creditos/shared`:
+  - esquemas Zod de entrada de créditos (`esquemasCreditos.ts`): montos como número o string con decimales exactos, identificación según su tipo, edición parcial con `version`, cambio de estado con observación obligatoria al rechazar o cancelar, y filtros del listado;
+  - esquemas Zod de respuesta (`respuestasCreditos.ts`): crédito, entrada del historial (estado, edición o eliminación), resumen y catálogos. Los tipos se derivan de ellos;
+  - transiciones permitidas y estados en curso (`estadosCredito.ts`), y la acción `verEliminados` (solo ADMIN) en la matriz de permisos.
+- `apps/api`, módulo `catalogos`: los tres catálogos activos en una llamada y la verificación de códigos al crear o editar.
+- `apps/api`, módulo `creditos`:
+  - listar con filtros, búsqueda sin tildes, orden en una lista cerrada y paginación; resumen por estado con cantidades y montos; detalle; historial como línea de tiempo;
+  - crear (con el asociado nuevo o existente, en una transacción), editar en `SOLICITADO`, cambiar de estado y eliminar lógicamente con motivo;
+  - escrituras de `Creditos` con SQL parametrizado (`$queryRaw` / `$executeRaw`) y concurrencia optimista por `ROWVERSION`.
+- Swagger: OpenAPI 3.1 generado desde los esquemas Zod (`@asteasolutions/zod-to-openapi`), un `*Docs.ts` por módulo, UI en `/api/docs` y JSON en `/api/docs/openapi.json`. Variable `DOCS_HABILITADA`.
+- `troubleshooting.md`: la BD no disponible (Docker Desktop arrancando) y los comodines de `LIKE` en la búsqueda.
+
+### Changed
+- ADR 0004: las transiciones permitidas viven en `shared`, no en el módulo de créditos; sus pendientes pasan a resueltos.
+- ADR 0007, 0014 y 0015: Swagger, las reglas pendientes y la entrada de los montos quedan resueltos.
+- ADR 0012 y `pnpm-workspace.yaml`: `@scarf/scarf` (telemetría de `swagger-ui-dist`) queda denegado en `allowBuilds`.
+- `tiposAuth.ts` y `respuestas.ts` de `shared` pasan de interfaces a esquemas Zod, para que Swagger documente también las respuestas.
+- `eslint.config.js`: en los `*Repository.ts`, las claves de objeto quedan libres de formato (relaciones de Prisma, `_count`, llaves compuestas).
+- `convenciones.md`: la regla de los `*Docs.ts`. `variables-entorno.md` y `setup-local.md`: `DOCS_HABILITADA` y la URL de Swagger.
+
+### Fixed
+- La búsqueda con `%` o `_` devolvía todos los créditos: el `contains` de Prisma no escapa los comodines de `LIKE`. Ahora pasa por `escaparLike`.
+
+### Verificado
+- 75 pruebas de punta a punta contra el bundle de producción, entre ellas el payload exacto del enunciado, la creación concurrente (un 201 y un 409), los cuatro ojos en ambos sentidos, la búsqueda con comodines y la coherencia del resumen. Detalle en el ADR 0017.
+- Swagger UI carga sin errores de consola con la CSP de helmet.
+
 ## [0.1.0] - 2026-10-01 — Paso 4b: autenticación
 
 Login, sesión única, refresh rotativo, permisos, gestión de usuarios y eventos de seguridad. Decisiones en el [ADR 0016](01-arquitectura/decisions/0016-autenticacion-sesiones-y-permisos.md).

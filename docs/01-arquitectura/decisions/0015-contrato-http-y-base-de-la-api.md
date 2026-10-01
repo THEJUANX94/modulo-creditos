@@ -120,6 +120,6 @@ Con `pnpm -F @creditos/api build` y `node dist/server.js` contra el compose:
 
 Resuelto en el paso 4b: los errores de Zod se traducen a `details` con `validarEntrada(esquema, datos)`, un campo por problema (`campo` es la ruta del campo). Los códigos de autenticación están en el [ADR 0016](0016-autenticacion-sesiones-y-permisos.md).
 
-- Si la entrada acepta montos como número además de string (paso 4c).
+Resuelto en el [ADR 0017](0017-api-de-creditos-y-swagger.md): la entrada acepta montos como número o como string, sin redondear en silencio.
 
 Última actualización: 2026-10-01

@@ -61,6 +61,18 @@ Msg 1934 … CREATE TABLE failed because the following SET options have incorrec
 
 **No es un error.** Hay una sola sesión por usuario ([ADR 0016](../01-arquitectura/decisions/0016-autenticacion-sesiones-y-permisos.md)): un login nuevo cierra la sesión anterior al instante. Lo mismo pasa si un ADMIN desactiva al usuario o le cambia el rol, o si un refresh token rotado se reusa pasados 10 segundos. Cada caso queda en `EventosSeguridad`.
 
+## La API responde 500 "Failed to connect to localhost:1433"
+
+**Causa.** SQL Server no está arriba. Con Docker Desktop, pasa cuando está cerrado o todavía arrancando: puede tardar varios minutos, con la distro WSL `docker-desktop` en `Stopped` y `docker info` sin responder.
+
+**Solución.** Esperar a que Docker Desktop termine de arrancar (`docker version` muestra la versión del servidor) y correr `docker compose up -d`. **La API no necesita reiniciarse**: el readiness vuelve a 200 apenas la BD responde.
+
+## La búsqueda con `%` o `_` devuelve todo
+
+**Causa.** El `contains` de Prisma arma un `LIKE` y en SQL Server no escapa los comodines.
+
+**Solución.** Ya está resuelto en `creditosRepository.ts` (`escaparLike`), que los escapa con corchetes (`[%]`). Cualquier búsqueda nueva con `contains` debe pasar por esa función.
+
 ## Prisma inserta `N'PENDIENTE'` literal, o no genera `create` para `Creditos`
 
 **Causa.** Son limitaciones de la introspección de Prisma 7 con SQL Server: no soporta `ROWVERSION`, trata las columnas calculadas como campos normales y lee los `DEFAULT (N'...')` como texto literal.

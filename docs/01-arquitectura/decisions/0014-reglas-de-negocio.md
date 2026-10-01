@@ -143,7 +143,9 @@ La matriz definitiva, con la lectura y la cancelación, está en el [ADR 0016](0
 
 ## Por definir en la implementación
 
-- El código HTTP y el código de error de una transición inválida y de un error de validación de entrada (400 o 422).
-- Qué parte de estas reglas se valida además en los esquemas Zod compartidos ([ADR 0007](0007-zod-compartido-openapi-generado.md)).
+Resuelto en los ADR [0015](0015-contrato-http-y-base-de-la-api.md) y [0017](0017-api-de-creditos-y-swagger.md):
+
+- Una transición inválida responde 409 `TRANSICION_INVALIDA`, y una entrada inválida 400 `VALIDACION_FALLIDA` con un detalle por campo.
+- Los esquemas Zod compartidos validan la forma y los rangos: montos, tasa, cuotas, formato de la identificación por tipo y observación obligatoria al rechazar o cancelar. El service valida lo que depende de la BD o del estado: catálogos activos, asociado, duplicados, transiciones, cuatro ojos, edición y borrado.
 
 Última actualización: 2026-10-01

@@ -56,6 +56,7 @@ Va en camelCase:
 - **Las respuestas exitosas se envían con `responderExito(res, data, { status, meta })`**, nunca armando el sobre a mano.
 - **Ningún módulo lee `process.env`**: todo sale de `config` (`src/config/config.ts`). Los scripts de una sola vez (`src/scripts/`) leen y validan sus propias variables.
 - **La entrada se valida con `validarEntrada(esquema, datos)`** y un esquema de `@creditos/shared`: devuelve los datos tipados, o lanza 400 `VALIDACION_FALLIDA` con un detalle por campo.
+- **Cada módulo documenta sus rutas en su `*Docs.ts`** (OpenAPI), con los esquemas Zod de `@creditos/shared` y los errores posibles por ruta (`errores(...)`). Las respuestas también tienen esquema Zod, y su tipo se deriva de él.
 - **Las rutas protegidas usan `autenticar()` y `autorizar(accion)`**, con una acción de la matriz de `@creditos/shared`.
 - **En los `*Repository.ts`, las claves de objeto pueden ir en PascalCase**: son los campos de relación de Prisma, que llevan el nombre de su tabla (`select: { Usuarios: … }`). El lint lo permite solo en esos archivos.
 
