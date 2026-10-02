@@ -10,10 +10,8 @@ coverage/
 # Cliente de Prisma: se genera con `prisma generate` (postinstall)
 apps/api/src/generated/
 
-# Variables de entorno
-.env
-.env.*
-!.env.example
+# Variables de entorno: TEMPORAL. Los .env se versionan para enviarlos con la entrevista (son claves
+# aleatorias de desarrollo local). Antes de publicar el repo, restaurar:  .env  /  .env.*  /  !.env.example
 
 # Logs
 *.log
